@@ -87,6 +87,13 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
 
       if (newNotifications.length > 0) {
         setActiveNotifications(prev => [...prev, ...newNotifications]);
+        
+        // Auto-dismiss each notification after 60 seconds
+        newNotifications.forEach(notification => {
+          setTimeout(() => {
+            dismissNotification(notification.id);
+          }, 60000); // 60 seconds
+        });
       }
     };
 
@@ -136,8 +143,11 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
       {activeNotifications.map((notification) => (
         <div
           key={notification.id}
-          className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-6 rounded-xl shadow-2xl border-4 border-amber-400 animate-bounce cursor-pointer transform scale-105 hover:scale-110 transition-transform"
+          className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-6 rounded-xl shadow-2xl border-4 border-amber-400 animate-pulse cursor-pointer transform scale-105 hover:scale-110 transition-transform"
           onClick={() => handleEventClick(notification.event.id, notification.id)}
+          style={{
+            animation: 'gentle-shake 0.5s ease-in-out 0s 3, fade-in 0.3s ease-out'
+          }}
         >
           <div className="flex justify-between items-start">
             <div className="flex-1 pr-3">

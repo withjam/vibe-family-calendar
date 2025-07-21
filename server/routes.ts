@@ -65,8 +65,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertEventSchema.parse(req.body);
       
+      console.log('Creating event with data:', JSON.stringify(validatedData, null, 2));
+      
       // If creating event in an OAuth-enabled calendar, sync to Google Calendar
       if (validatedData.sourceCalendar) {
+        console.log('Event has sourceCalendar:', validatedData.sourceCalendar);
         const calendarSource = await storage.getCalendarSourceByName(validatedData.sourceCalendar);
         
         console.log('Calendar source found:', calendarSource);
