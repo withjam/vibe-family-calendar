@@ -1,4 +1,6 @@
 import { format } from "date-fns";
+import { useState } from "react";
+import { MonthYearPicker } from "./month-year-picker";
 
 interface CalendarHeaderProps {
   currentDate: Date;
@@ -19,16 +21,31 @@ export function CalendarHeader({
   onImportCalendars,
   onShowReminders,
 }: CalendarHeaderProps) {
+  const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
+
+  const handleMonthYearSelect = (date: Date) => {
+    const monthsDiff = date.getMonth() - currentDate.getMonth();
+    const yearsDiff = date.getFullYear() - currentDate.getFullYear();
+    
+    if (yearsDiff !== 0) {
+      // Navigate years first
+      for (let i = 0; i < Math.abs(yearsDiff); i++) {
+        onNavigateYear(yearsDiff > 0 ? "next" : "prev");
+      }
+    }
+    
+    // Then navigate months
+    for (let i = 0; i < Math.abs(monthsDiff); i++) {
+      onNavigateMonth(monthsDiff > 0 ? "next" : "prev");
+    }
+    
+    setShowMonthYearPicker(false);
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <button
-            onClick={() => onNavigateYear("prev")}
-            className="touch-target ripple-effect bg-primary text-primary-foreground rounded-lg px-4 hover:bg-blue-700 transition-colors font-semibold"
-          >
-            ◀◀
-          </button>
           <button
             onClick={() => onNavigateMonth("prev")}
             className="touch-target ripple-effect bg-primary text-primary-foreground rounded-lg px-4 hover:bg-blue-700 transition-colors font-semibold"
@@ -36,23 +53,20 @@ export function CalendarHeader({
             ◀
           </button>
 
-          <div className="text-center min-w-[200px]">
+          <button
+            onClick={() => setShowMonthYearPicker(true)}
+            className="text-center min-w-[200px] hover:bg-slate-100 rounded-lg px-4 py-2 transition-colors cursor-pointer"
+          >
             <h1 className="text-2xl font-bold text-slate-800">
               {format(currentDate, "MMMM yyyy")}
             </h1>
-          </div>
+          </button>
 
           <button
             onClick={() => onNavigateMonth("next")}
             className="touch-target ripple-effect bg-primary text-primary-foreground rounded-lg px-4 hover:bg-blue-700 transition-colors font-semibold"
           >
             ▶
-          </button>
-          <button
-            onClick={() => onNavigateYear("next")}
-            className="touch-target ripple-effect bg-primary text-primary-foreground rounded-lg px-4 hover:bg-blue-700 transition-colors font-semibold"
-          >
-            ▶▶
           </button>
         </div>
 
@@ -64,34 +78,38 @@ export function CalendarHeader({
         <div className="flex items-center space-x-3">
           <button
             onClick={onShowReminders}
-            className="touch-target ripple-effect bg-amber-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-amber-700 transition-colors flex items-center space-x-2"
+            className="touch-target ripple-effect bg-amber-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-amber-700 transition-colors"
           >
-            <span>🔔</span>
-            <span>Reminders</span>
+            Reminders
           </button>
           <button
             onClick={onImportCalendars}
-            className="touch-target ripple-effect bg-purple-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-purple-700 transition-colors flex items-center space-x-2"
+            className="touch-target ripple-effect bg-purple-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-purple-700 transition-colors"
           >
-            <span>📥</span>
-            <span>Import</span>
-          </button>
-          <button
-            onClick={onAddEvent}
-            className="touch-target ripple-effect bg-emerald-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-emerald-700 transition-colors flex items-center space-x-2"
-          >
-            <span>+</span>
-            <span>Add Event</span>
+            Import
           </button>
           <button
             onClick={onSearchEvents}
-            className="touch-target ripple-effect bg-slate-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-slate-700 transition-colors flex items-center space-x-2"
+            className="touch-target ripple-effect bg-blue-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-blue-700 transition-colors"
           >
-            <span>🔍</span>
-            <span>Search</span>
+            Search
+          </button>
+          <button
+            onClick={onAddEvent}
+            className="touch-target ripple-effect bg-green-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-green-700 transition-colors"
+          >
+            Add Event
           </button>
         </div>
       </div>
+
+      {showMonthYearPicker && (
+        <MonthYearPicker
+          currentDate={currentDate}
+          onSelect={handleMonthYearSelect}
+          onClose={() => setShowMonthYearPicker(false)}
+        />
+      )}
     </div>
   );
 }
