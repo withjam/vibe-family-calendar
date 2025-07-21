@@ -97,6 +97,7 @@ export function CalendarGrid({
         {days.map(day => {
           const dayEvents = getEventsForDay(day);
           const isCurrentMonth = isSameMonth(day, currentDate);
+          const isToday = isSameDay(day, new Date());
 
           const handleCellClick = (e: React.MouseEvent) => {
             // Only handle day click if not clicking on an event
@@ -111,9 +112,11 @@ export function CalendarGrid({
               key={day.toISOString()}
               onClick={handleCellClick}
               className={`calendar-cell border-r border-b border-slate-200 p-3 flex flex-col cursor-pointer ${
-                isCurrentMonth 
-                  ? "bg-white hover:bg-slate-50" 
-                  : "bg-slate-50"
+                isToday && isCurrentMonth
+                  ? "bg-blue-50 hover:bg-blue-100 border-blue-200"
+                  : isCurrentMonth 
+                    ? "bg-white hover:bg-slate-50" 
+                    : "bg-slate-50"
               } ${days.indexOf(day) % 7 === 6 ? "border-r-0" : ""} ${
                 days.indexOf(day) >= days.length - 7 ? "border-b-0" : ""
               }`}
@@ -121,7 +124,11 @@ export function CalendarGrid({
               <div className="flex justify-end mb-2">
                 <span
                   className={`font-semibold ${
-                    isCurrentMonth ? "text-slate-800" : "text-slate-400"
+                    isToday && isCurrentMonth
+                      ? "text-blue-700 bg-blue-100 px-2 py-1 rounded-full text-sm"
+                      : isCurrentMonth 
+                        ? "text-slate-800" 
+                        : "text-slate-400"
                   }`}
                 >
                   {format(day, "d")}
