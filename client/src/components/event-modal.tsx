@@ -120,7 +120,7 @@ export function EventModal({
           {event.description && (
             <div className="pt-4 border-t border-slate-200">
               <h3 className="font-semibold text-slate-800 mb-2">Description</h3>
-              <div className="max-h-32 overflow-y-auto bg-slate-50 p-3 rounded-lg">
+              <div className="max-h-64 overflow-y-auto bg-slate-50 p-3 rounded-lg">
                 <p className="text-slate-600 whitespace-pre-wrap">{event.description}</p>
               </div>
             </div>

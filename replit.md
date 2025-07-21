@@ -87,6 +87,17 @@ Preferred communication style: Simple, everyday language.
 - ✅ Event updates synchronized across platforms
 - ✅ Event deletions synchronized across platforms
 
+### UI/UX Enhancements & Smart Defaults (January 21, 2025)
+- ✅ Toast notifications properly positioned at top center with vertical slide animations
+- ✅ Add Event button restored with + prefix icon for better visual prominence
+- ✅ Smart time defaults: new events use current time rounded to 15-minute intervals
+- ✅ One-hour default duration for new events
+- ✅ Scrollable event descriptions with doubled height (max-h-64) for better readability
+- ✅ Modal overflow protection with viewport-constrained heights
+- ✅ Calendar type auto-detection from URL patterns (Google, WebCal, iCal)
+- ✅ Curated color palette: 25 complementary and distinct colors replacing color wheel
+- ✅ Improved calendar import UX with reduced clicks and error prevention
+
 ## Key Components
 
 ### Database Schema

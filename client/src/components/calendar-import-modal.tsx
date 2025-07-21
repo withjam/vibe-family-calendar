@@ -12,13 +12,37 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Curated color palette - 25 complementary but distinct colors
+  const colorPalette = [
+    "#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6",
+    "#06B6D4", "#F97316", "#84CC16", "#EC4899", "#6366F1",
+    "#14B8A6", "#F43F5E", "#A855F7", "#22C55E", "#F59E0B",
+    "#3B82F6", "#EF4444", "#8B5CF6", "#06B6D4", "#F97316",
+    "#84CC16", "#EC4899", "#6366F1", "#14B8A6", "#F43F5E"
+  ];
+
   const [formData, setFormData] = useState({
     name: "",
     url: "",
     type: "ical" as "ical" | "google" | "webcal",
-    color: "#3b82f6",
+    color: colorPalette[0],
     syncInterval: 3600,
   });
+
+  // Auto-detect calendar type from URL
+  const detectCalendarType = (url: string): "ical" | "google" | "webcal" => {
+    const lowerUrl = url.toLowerCase();
+    
+    if (lowerUrl.includes('calendar.google.com')) {
+      return "google";
+    } else if (lowerUrl.startsWith('webcal://')) {
+      return "webcal";
+    } else if (lowerUrl.includes('.ics') || lowerUrl.includes('ical')) {
+      return "ical";
+    }
+    
+    return "ical"; // default fallback
+  };
 
   const [showExamples, setShowExamples] = useState(false);
 
@@ -45,7 +69,7 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
         name: "",
         url: "",
         type: "ical",
-        color: "#3b82f6",
+        color: colorPalette[0],
         syncInterval: 3600,
       });
     },
@@ -287,7 +311,15 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
                 <input
                   type="url"
                   value={formData.url}
-                  onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                  onChange={(e) => {
+                    const url = e.target.value;
+                    const detectedType = detectCalendarType(url);
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      url,
+                      type: detectedType
+                    }));
+                  }}
                   className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="https://calendar.google.com/calendar/ical/..."
                   required
@@ -313,12 +345,25 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     Color
                   </label>
-                  <input
-                    type="color"
-                    value={formData.color}
-                    onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                    className="w-full h-12 border border-slate-300 rounded-lg cursor-pointer"
-                  />
+                  <div className="grid grid-cols-5 gap-2">
+                    {colorPalette.map((color, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, color }))}
+                        className={`w-8 h-8 rounded-lg cursor-pointer border-2 transition-all ${
+                          formData.color === color 
+                            ? 'border-slate-800 ring-2 ring-slate-300' 
+                            : 'border-slate-300 hover:border-slate-500'
+                        }`}
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-2 text-xs text-slate-500">
+                    Selected: {formData.color}
+                  </div>
                 </div>
               </div>
 
