@@ -31,7 +31,7 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
       if (!response.ok) throw new Error("Failed to fetch events");
       return response.json();
     },
-    refetchInterval: 30000, // Check every 30 seconds
+    refetchInterval: 15000, // Check every 15 seconds for more responsive notifications
   });
 
   useEffect(() => {
@@ -63,9 +63,9 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
           if (reminderTime) {
             const reminderId = `${event.id}-${reminderText}-${reminderTime.getTime()}`;
             
-            // Check if reminder should trigger (current time has passed reminder time)
+            // Check if reminder should trigger - extended window to catch missed notifications
             const timeDiff = now.getTime() - reminderTime.getTime();
-            const shouldTrigger = timeDiff >= 0 && timeDiff <= 300000; // Within 5 minutes of trigger time
+            const shouldTrigger = timeDiff >= 0 && timeDiff <= 900000; // Within 15 minutes of trigger time to catch background delays
             
             console.log('Event:', event.title, 'Reminder:', reminderText, 'Time diff:', timeDiff, 'Should trigger:', shouldTrigger);
             
@@ -90,7 +90,34 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
       }
     };
 
+    // Initial check
     checkForTriggeredReminders();
+    
+    // Set up multiple strategies for checking reminders
+    const interval = setInterval(checkForTriggeredReminders, 15000); // Check every 15 seconds
+    
+    // Additional check when page becomes visible (handles tab switching)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Page became visible, checking for missed reminders...');
+        checkForTriggeredReminders();
+      }
+    };
+    
+    // Additional check on focus (handles window switching)
+    const handleFocus = () => {
+      console.log('Window focused, checking for missed reminders...');
+      checkForTriggeredReminders();
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [events, checkedReminders]);
 
   const dismissNotification = (notificationId: string) => {
