@@ -101,9 +101,7 @@ export function CalendarGrid({
           const handleCellClick = (e: React.MouseEvent) => {
             // Only handle day click if not clicking on an event
             const isEventClick = (e.target as HTMLElement).closest('.event-item');
-            console.log('Cell clicked:', { day: format(day, 'yyyy-MM-dd'), isEventClick: !!isEventClick, isCurrentMonth, hasOnDayClick: !!onDayClick });
             if (!isEventClick && onDayClick && isCurrentMonth) {
-              console.log('Calling onDayClick with:', day);
               onDayClick(day);
             }
           };
