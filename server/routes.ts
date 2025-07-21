@@ -262,13 +262,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Exchange code for tokens
       const tokens = await googleOAuthService.exchangeCodeForTokens(code as string);
       
+      if (!tokens.refresh_token) {
+        throw new Error("No refresh token received. User may need to revoke and re-authorize.");
+      }
+      
       // Get user's calendars to find the calendar ID
       googleOAuthService.setCredentials(tokens.refresh_token);
       const userCalendars = await googleOAuthService.getUserCalendars();
       const primaryCalendar = userCalendars.find(cal => cal.primary) || userCalendars[0];
       
       if (!primaryCalendar) {
-        return res.status(400).json({ message: "No calendars found for user" });
+        throw new Error("No calendars found for user");
       }
 
       // Update calendar source with OAuth credentials

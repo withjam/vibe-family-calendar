@@ -47,7 +47,7 @@ export class GoogleOAuthService {
     refresh_token: string;
     access_token: string;
   }> {
-    const { tokens } = await this.oauth2Client.getAccessToken(code);
+    const { tokens } = await this.oauth2Client.getToken(code);
     return {
       refresh_token: tokens.refresh_token,
       access_token: tokens.access_token
