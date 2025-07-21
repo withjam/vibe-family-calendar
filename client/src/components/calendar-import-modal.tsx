@@ -12,13 +12,14 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Curated color palette - 25 complementary but distinct colors
+  // Curated color palette - 30 unique complementary but distinct colors
   const colorPalette = [
     "#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6",
     "#06B6D4", "#F97316", "#84CC16", "#EC4899", "#6366F1",
-    "#14B8A6", "#F43F5E", "#A855F7", "#22C55E", "#F59E0B",
-    "#3B82F6", "#EF4444", "#8B5CF6", "#06B6D4", "#F97316",
-    "#84CC16", "#EC4899", "#6366F1", "#14B8A6", "#F43F5E"
+    "#14B8A6", "#F43F5E", "#A855F7", "#22C55E", "#FB7185",
+    "#0EA5E9", "#DC2626", "#059669", "#D97706", "#7C3AED",
+    "#0891B2", "#EA580C", "#65A30D", "#DB2777", "#4F46E5",
+    "#0D9488", "#E11D48", "#9333EA", "#16A34A", "#F97316"
   ];
 
   const [formData, setFormData] = useState({
@@ -326,44 +327,28 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Type
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as any }))}
-                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  >
-                    <option value="ical">iCal/ICS</option>
-                    <option value="google">Google Calendar</option>
-                    <option value="webcal">WebCal</option>
-                  </select>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Color
+                </label>
+                <div className="grid grid-cols-10 gap-2">
+                  {colorPalette.map((color, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, color }))}
+                      className={`w-8 h-8 rounded-lg cursor-pointer border-2 transition-all ${
+                        formData.color === color 
+                          ? 'border-slate-800 ring-2 ring-slate-300' 
+                          : 'border-slate-300 hover:border-slate-500'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))}
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Color
-                  </label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {colorPalette.map((color, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, color }))}
-                        className={`w-8 h-8 rounded-lg cursor-pointer border-2 transition-all ${
-                          formData.color === color 
-                            ? 'border-slate-800 ring-2 ring-slate-300' 
-                            : 'border-slate-300 hover:border-slate-500'
-                        }`}
-                        style={{ backgroundColor: color }}
-                        title={color}
-                      />
-                    ))}
-                  </div>
-                  <div className="mt-2 text-xs text-slate-500">
-                    Selected: {formData.color}
-                  </div>
+                <div className="mt-2 text-xs text-slate-500">
+                  Selected: {formData.color} • Type: {formData.type.charAt(0).toUpperCase() + formData.type.slice(1)} (auto-detected)
                 </div>
               </div>
 
