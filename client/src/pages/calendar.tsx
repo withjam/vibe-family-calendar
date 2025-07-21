@@ -10,6 +10,7 @@ import { NotificationBanner } from "@/components/notification-banner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useSyncWorker } from "@/hooks/use-sync-worker";
 import type { Event } from "@shared/schema";
 
 export default function Calendar() {
@@ -51,6 +52,19 @@ export default function Calendar() {
       return response.json();
     },
   });
+
+  // Get calendar sources for sync worker
+  const { data: calendarSources = [] } = useQuery({
+    queryKey: ["/api/calendar-sources"],
+    queryFn: async () => {
+      const response = await fetch("/api/calendar-sources");
+      if (!response.ok) throw new Error("Failed to fetch calendar sources");
+      return response.json();
+    },
+  });
+
+  // Initialize sync worker for background calendar synchronization
+  const { status: syncStatus, triggerSync, restartWorker } = useSyncWorker(calendarSources);
 
   const deleteEventMutation = useMutation({
     mutationFn: async (eventId: number) => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { format, isAfter, isBefore, addMinutes, addHours, addDays } from "date-fns";
+import { format } from "date-fns";
+import { useReminderWorker } from "@/hooks/use-reminder-worker";
 import type { Event } from "@shared/schema";
 
 interface NotificationBannerProps {
@@ -16,9 +17,9 @@ interface TriggeredReminder {
 
 export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
   const [activeNotifications, setActiveNotifications] = useState<TriggeredReminder[]>([]);
-  const [checkedReminders, setCheckedReminders] = useState<Set<string>>(new Set());
   const [progressBars, setProgressBars] = useState<Map<string, number>>(new Map());
 
+  // Get events for the next 24 hours for reminder processing
   const { data: events = [] } = useQuery({
     queryKey: ["/api/events/range"],
     queryFn: async () => {
@@ -32,117 +33,44 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
       if (!response.ok) throw new Error("Failed to fetch events");
       return response.json();
     },
-    refetchInterval: 15000, // Check every 15 seconds for more responsive notifications
+    refetchInterval: 60000, // Reduced frequency as worker handles the frequent checking
   });
 
+  // Use web worker for reminder processing
+  const { triggeredReminders, clearReminders, status } = useReminderWorker(events);
+
+  // Handle new reminders from the web worker
   useEffect(() => {
-    const checkForTriggeredReminders = () => {
-      const now = new Date();
-      const newNotifications: TriggeredReminder[] = [];
-
-      console.log('Checking reminders for', events.length, 'events at', now.toISOString());
-
-      events.forEach((event: Event) => {
-        if (!event.reminders || event.reminders.length === 0) return;
-
-        const eventStart = new Date(event.startTime);
+    if (triggeredReminders.length > 0) {
+      setActiveNotifications(prev => [...prev, ...triggeredReminders]);
+      
+      // Set up progress bar and auto-dismiss for each new notification
+      triggeredReminders.forEach(notification => {
+        // Initialize progress bar at 100%
+        setProgressBars(prev => new Map(prev.set(notification.id, 100)));
         
-        event.reminders.forEach((reminderText: string) => {
-          let reminderTime: Date | null = null;
-
-          // Parse reminder text to calculate time
-          if (reminderText.includes("15 minutes")) {
-            reminderTime = addMinutes(eventStart, -15);
-          } else if (reminderText.includes("30 minutes")) {
-            reminderTime = addMinutes(eventStart, -30);
-          } else if (reminderText.includes("1 hour")) {
-            reminderTime = addHours(eventStart, -1);
-          } else if (reminderText.includes("1 day")) {
-            reminderTime = addDays(eventStart, -1);
-          }
-
-          if (reminderTime) {
-            const reminderId = `${event.id}-${reminderText}-${reminderTime.getTime()}`;
-            
-            // Check if reminder should trigger - extended window to catch missed notifications
-            const timeDiff = now.getTime() - reminderTime.getTime();
-            const shouldTrigger = timeDiff >= 0 && timeDiff <= 900000; // Within 15 minutes of trigger time to catch background delays
-            
-            console.log('Event:', event.title, 'Reminder:', reminderText, 'Time diff:', timeDiff, 'Should trigger:', shouldTrigger);
-            
-            if (shouldTrigger && !checkedReminders.has(reminderId)) {
-              console.log('Triggering reminder for:', event.title);
-              newNotifications.push({
-                event,
-                reminderText,
-                reminderTime,
-                id: reminderId,
-              });
-              
-              // Mark as checked so it doesn't trigger again
-              setCheckedReminders(prev => new Set([...Array.from(prev), reminderId]));
-            }
-          }
-        });
-      });
-
-      if (newNotifications.length > 0) {
-        setActiveNotifications(prev => [...prev, ...newNotifications]);
-        
-        // Set up progress bar and auto-dismiss for each notification
-        newNotifications.forEach(notification => {
-          // Initialize progress bar at 100%
-          setProgressBars(prev => new Map(prev.set(notification.id, 100)));
+        // Update progress bar every 600ms (100 times in 60 seconds)
+        let progress = 100;
+        const progressInterval = setInterval(() => {
+          progress -= 100/100; // Decrease by 1% every 600ms
+          setProgressBars(prev => new Map(prev.set(notification.id, Math.max(0, progress))));
           
-          // Update progress bar every 600ms (100 times in 60 seconds)
-          let progress = 100;
-          const progressInterval = setInterval(() => {
-            progress -= 100/100; // Decrease by 1% every 600ms
-            setProgressBars(prev => new Map(prev.set(notification.id, Math.max(0, progress))));
-            
-            if (progress <= 0) {
-              clearInterval(progressInterval);
-            }
-          }, 600);
-          
-          // Auto-dismiss after 60 seconds
-          setTimeout(() => {
-            dismissNotification(notification.id);
+          if (progress <= 0) {
             clearInterval(progressInterval);
-          }, 60000);
-        });
-      }
-    };
-
-    // Initial check
-    checkForTriggeredReminders();
-    
-    // Set up multiple strategies for checking reminders
-    const interval = setInterval(checkForTriggeredReminders, 15000); // Check every 15 seconds
-    
-    // Additional check when page becomes visible (handles tab switching)
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log('Page became visible, checking for missed reminders...');
-        checkForTriggeredReminders();
-      }
-    };
-    
-    // Additional check on focus (handles window switching)
-    const handleFocus = () => {
-      console.log('Window focused, checking for missed reminders...');
-      checkForTriggeredReminders();
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-    
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [events, checkedReminders]);
+          }
+        }, 600);
+        
+        // Auto-dismiss after 60 seconds
+        setTimeout(() => {
+          dismissNotification(notification.id);
+          clearInterval(progressInterval);
+        }, 60000);
+      });
+      
+      // Clear the triggered reminders from the worker
+      clearReminders();
+    }
+  }, [triggeredReminders, clearReminders]);
 
   const dismissNotification = (notificationId: string) => {
     setActiveNotifications(prev => prev.filter(n => n.id !== notificationId));
