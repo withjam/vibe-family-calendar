@@ -1,5 +1,6 @@
 import { format } from "date-fns";
-import type { Event } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import type { Event, CalendarSource } from "@shared/schema";
 
 interface EventModalProps {
   event: Event;
@@ -16,6 +17,15 @@ export function EventModal({
   onDelete,
   isDeleting = false,
 }: EventModalProps) {
+  // Fetch calendar sources to get source details
+  const { data: calendarSources = [] } = useQuery({
+    queryKey: ["/api/calendar-sources"],
+    queryFn: async () => {
+      const response = await fetch("/api/calendar-sources");
+      if (!response.ok) throw new Error("Failed to fetch calendar sources");
+      return response.json();
+    },
+  });
   const getCategoryColor = (category: string) => {
     const colors = {
       work: "bg-blue-500",
@@ -72,6 +82,28 @@ export function EventModal({
             <span className="text-slate-500">📅</span>
             <span className="text-slate-700">{formatDateTime(event.startTime)}</span>
           </div>
+
+          {event.sourceCalendar && (
+            <div className="flex items-center space-x-3">
+              <span className="text-slate-500">📋</span>
+              <div className="flex items-center space-x-2">
+                {(() => {
+                  const source = calendarSources.find((s: CalendarSource) => s.name === event.sourceCalendar);
+                  return (
+                    <>
+                      {source?.color && (
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: source.color }}
+                        ></div>
+                      )}
+                      <span className="text-slate-700">{event.sourceCalendar}</span>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center space-x-3">
             <span className="text-slate-500">🕐</span>

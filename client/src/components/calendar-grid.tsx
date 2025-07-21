@@ -127,12 +127,7 @@ export function CalendarGrid({
                     }`}
                     style={getEventStyle(event)}
                   >
-                    <div className="flex items-center space-x-1 truncate mr-1">
-                      <span className="truncate">{event.title}</span>
-                      {event.sourceCalendar && (
-                        <span className="text-xs opacity-60 flex-shrink-0">📅</span>
-                      )}
-                    </div>
+                    <span className="truncate mr-1">{event.title}</span>
                     <span className="flex-shrink-0">
                       {event.isAllDay ? "All Day" : formatTime(event.startTime)}
                     </span>

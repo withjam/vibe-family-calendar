@@ -218,7 +218,7 @@ export function AddEventModal({ event, onClose }: AddEventModalProps) {
               <option value="">Local Calendar (Default)</option>
               {calendarSources.map((source: CalendarSource) => (
                 <option key={source.id} value={source.name}>
-                  📅 {source.name}
+                  {source.name}
                 </option>
               ))}
             </select>

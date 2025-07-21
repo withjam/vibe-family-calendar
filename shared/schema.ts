@@ -40,6 +40,17 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertEventSchema = createInsertSchema(events).omit({
   id: true,
+}).extend({
+  startTime: z.union([
+    z.string().transform((val) => new Date(val)),
+    z.date()
+  ]),
+  endTime: z.union([
+    z.string().transform((val) => new Date(val)),
+    z.date()
+  ]).nullable().optional(),
+  sourceCalendar: z.string().nullable().optional(),
+  externalId: z.string().nullable().optional(),
 });
 
 export const updateEventSchema = insertEventSchema.partial();
