@@ -122,9 +122,11 @@ export default function Calendar() {
   };
 
   const handleDayClick = (date: Date) => {
+    console.log('handleDayClick called with:', date);
     setEditingEvent(null);
     setSelectedDate(date);
     setShowAddModal(true);
+    console.log('Set showAddModal to true');
   };
 
   const handleModalClose = () => {
@@ -181,6 +183,7 @@ export default function Calendar() {
           onClose={handleModalClose}
         />
       )}
+      {console.log('Render states:', { showAddModal, editingEvent: !!editingEvent, selectedDate: selectedDate?.toDateString() })}
 
       {showSearchModal && (
         <SearchModal
