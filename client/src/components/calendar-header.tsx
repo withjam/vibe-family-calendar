@@ -6,6 +6,7 @@ interface CalendarHeaderProps {
   onNavigateYear: (direction: "prev" | "next") => void;
   onAddEvent: () => void;
   onSearchEvents: () => void;
+  onImportCalendars: () => void;
 }
 
 export function CalendarHeader({
@@ -14,6 +15,7 @@ export function CalendarHeader({
   onNavigateYear,
   onAddEvent,
   onSearchEvents,
+  onImportCalendars,
 }: CalendarHeaderProps) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
@@ -52,17 +54,24 @@ export function CalendarHeader({
           </button>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={onImportCalendars}
+            className="touch-target ripple-effect bg-purple-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-purple-700 transition-colors flex items-center space-x-2"
+          >
+            <span>📥</span>
+            <span>Import</span>
+          </button>
           <button
             onClick={onAddEvent}
-            className="touch-target ripple-effect bg-emerald-600 text-white rounded-lg px-6 py-3 font-semibold hover:bg-emerald-700 transition-colors flex items-center space-x-2"
+            className="touch-target ripple-effect bg-emerald-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-emerald-700 transition-colors flex items-center space-x-2"
           >
             <span>+</span>
             <span>Add Event</span>
           </button>
           <button
             onClick={onSearchEvents}
-            className="touch-target ripple-effect bg-slate-600 text-white rounded-lg px-6 py-3 font-semibold hover:bg-slate-700 transition-colors flex items-center space-x-2"
+            className="touch-target ripple-effect bg-slate-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-slate-700 transition-colors flex items-center space-x-2"
           >
             <span>🔍</span>
             <span>Search</span>

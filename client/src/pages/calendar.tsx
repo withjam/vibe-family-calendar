@@ -4,6 +4,7 @@ import { CalendarGrid } from "@/components/calendar-grid";
 import { EventModal } from "@/components/event-modal";
 import { AddEventModal } from "@/components/add-event-modal";
 import { SearchModal } from "@/components/search-modal";
+import { CalendarImportModal } from "@/components/calendar-import-modal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +15,7 @@ export default function Calendar() {
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   const queryClient = useQueryClient();
@@ -136,6 +138,7 @@ export default function Calendar() {
         onNavigateYear={navigateYear}
         onAddEvent={handleAddEvent}
         onSearchEvents={() => setShowSearchModal(true)}
+        onImportCalendars={() => setShowImportModal(true)}
       />
 
       <CalendarGrid
@@ -166,6 +169,12 @@ export default function Calendar() {
         <SearchModal
           onClose={() => setShowSearchModal(false)}
           onEventSelect={handleEventSelect}
+        />
+      )}
+
+      {showImportModal && (
+        <CalendarImportModal
+          onClose={() => setShowImportModal(false)}
         />
       )}
     </div>

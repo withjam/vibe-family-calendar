@@ -1,4 +1,4 @@
-import { users, events, type User, type InsertUser, type Event, type InsertEvent, type UpdateEvent } from "@shared/schema";
+import { users, events, calendarSources, type User, type InsertUser, type Event, type InsertEvent, type UpdateEvent, type CalendarSource, type InsertCalendarSource, type UpdateCalendarSource } from "@shared/schema";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -13,19 +13,32 @@ export interface IStorage {
   updateEvent(id: number, event: UpdateEvent): Promise<Event | undefined>;
   deleteEvent(id: number): Promise<boolean>;
   searchEvents(query: string): Promise<Event[]>;
+  bulkCreateEvents(events: InsertEvent[]): Promise<Event[]>;
+  deleteEventsBySource(sourceCalendar: string): Promise<boolean>;
+  
+  // Calendar source methods
+  getAllCalendarSources(): Promise<CalendarSource[]>;
+  getCalendarSource(id: number): Promise<CalendarSource | undefined>;
+  createCalendarSource(source: InsertCalendarSource): Promise<CalendarSource>;
+  updateCalendarSource(id: number, source: UpdateCalendarSource): Promise<CalendarSource | undefined>;
+  deleteCalendarSource(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private events: Map<number, Event>;
+  private calendarSources: Map<number, CalendarSource>;
   private currentUserId: number;
   private currentEventId: number;
+  private currentCalendarSourceId: number;
 
   constructor() {
     this.users = new Map();
     this.events = new Map();
+    this.calendarSources = new Map();
     this.currentUserId = 1;
     this.currentEventId = 1;
+    this.currentCalendarSourceId = 1;
     
     // Add some initial events for demonstration
     this.initializeEvents();
@@ -139,7 +152,11 @@ export class MemStorage implements IStorage {
       description: insertEvent.description || null,
       location: insertEvent.location || null,
       endTime: insertEvent.endTime || null,
-      reminders: insertEvent.reminders || null
+      category: insertEvent.category || "personal",
+      isAllDay: insertEvent.isAllDay || false,
+      reminders: insertEvent.reminders || null,
+      sourceCalendar: insertEvent.sourceCalendar || null,
+      externalId: insertEvent.externalId || null
     };
     this.events.set(id, event);
     return event;
@@ -171,6 +188,67 @@ export class MemStorage implements IStorage {
     ).sort((a, b) => 
       new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
     );
+  }
+
+  async bulkCreateEvents(events: InsertEvent[]): Promise<Event[]> {
+    const createdEvents: Event[] = [];
+    for (const insertEvent of events) {
+      const event = await this.createEvent(insertEvent);
+      createdEvents.push(event);
+    }
+    return createdEvents;
+  }
+
+  async deleteEventsBySource(sourceCalendar: string): Promise<boolean> {
+    const eventsToDelete = Array.from(this.events.entries())
+      .filter(([_, event]) => event.sourceCalendar === sourceCalendar)
+      .map(([id, _]) => id);
+    
+    let deletedAny = false;
+    for (const id of eventsToDelete) {
+      if (this.events.delete(id)) {
+        deletedAny = true;
+      }
+    }
+    return deletedAny;
+  }
+
+  // Calendar source methods
+  async getAllCalendarSources(): Promise<CalendarSource[]> {
+    return Array.from(this.calendarSources.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getCalendarSource(id: number): Promise<CalendarSource | undefined> {
+    return this.calendarSources.get(id);
+  }
+
+  async createCalendarSource(insertSource: InsertCalendarSource): Promise<CalendarSource> {
+    const id = this.currentCalendarSourceId++;
+    const source: CalendarSource = {
+      ...insertSource,
+      id,
+      color: insertSource.color || "#3b82f6",
+      isActive: insertSource.isActive ?? true,
+      syncInterval: insertSource.syncInterval || 3600,
+      lastSynced: null,
+    };
+    this.calendarSources.set(id, source);
+    return source;
+  }
+
+  async updateCalendarSource(id: number, updateSource: UpdateCalendarSource): Promise<CalendarSource | undefined> {
+    const existingSource = this.calendarSources.get(id);
+    if (!existingSource) {
+      return undefined;
+    }
+    
+    const updatedSource: CalendarSource = { ...existingSource, ...updateSource };
+    this.calendarSources.set(id, updatedSource);
+    return updatedSource;
+  }
+
+  async deleteCalendarSource(id: number): Promise<boolean> {
+    return this.calendarSources.delete(id);
   }
 }
 

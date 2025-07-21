@@ -1,5 +1,6 @@
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
-import type { Event } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import type { Event, CalendarSource } from "@shared/schema";
 
 interface CalendarGridProps {
   currentDate: Date;
@@ -21,6 +22,15 @@ export function CalendarGrid({
 
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
+  const { data: calendarSources = [] } = useQuery({
+    queryKey: ["/api/calendar-sources"],
+    queryFn: async () => {
+      const response = await fetch("/api/calendar-sources");
+      if (!response.ok) throw new Error("Failed to fetch calendar sources");
+      return response.json();
+    },
+  });
+
   const getEventsForDay = (day: Date) => {
     return events
       .filter(event => isSameDay(new Date(event.startTime), day))
@@ -31,7 +41,17 @@ export function CalendarGrid({
     return format(new Date(dateTime), "h:mm a");
   };
 
-  const getEventColor = (category: string) => {
+  const getEventColor = (event: Event) => {
+    // If event has a source calendar, use its color
+    if (event.sourceCalendar) {
+      const source = calendarSources.find((s: CalendarSource) => s.name === event.sourceCalendar);
+      if (source?.color) {
+        // Convert hex color to CSS classes - simplified approach
+        return `border-l-4 text-slate-700`;
+      }
+    }
+
+    // Fallback to category-based colors for manually created events
     const colors = {
       work: "bg-blue-100 text-blue-800 border-blue-300",
       personal: "bg-purple-100 text-purple-800 border-purple-300",
@@ -40,7 +60,20 @@ export function CalendarGrid({
       sports: "bg-amber-100 text-amber-800 border-amber-300",
       default: "bg-gray-100 text-gray-800 border-gray-300",
     };
-    return colors[category as keyof typeof colors] || colors.default;
+    return colors[event.category as keyof typeof colors] || colors.default;
+  };
+
+  const getEventStyle = (event: Event) => {
+    if (event.sourceCalendar) {
+      const source = calendarSources.find((s: CalendarSource) => s.name === event.sourceCalendar);
+      if (source?.color) {
+        return {
+          borderLeftColor: source.color,
+          backgroundColor: source.color + "20", // Add transparency
+        };
+      }
+    }
+    return {};
   };
 
   return (
@@ -89,9 +122,10 @@ export function CalendarGrid({
                   <div
                     key={event.id}
                     onClick={() => onEventSelect(event.id)}
-                    className={`event-item text-xs px-2 py-1 rounded font-medium flex justify-between cursor-pointer ${getEventColor(event.category)} ${
+                    className={`event-item text-xs px-2 py-1 rounded font-medium flex justify-between cursor-pointer ${getEventColor(event)} ${
                       selectedEventId === event.id ? "selected" : ""
                     }`}
+                    style={getEventStyle(event)}
                   >
                     <span className="truncate mr-1">{event.title}</span>
                     <span className="flex-shrink-0">

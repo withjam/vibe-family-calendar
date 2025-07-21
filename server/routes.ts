@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertEventSchema, updateEventSchema } from "@shared/schema";
+import { insertEventSchema, updateEventSchema, insertCalendarSourceSchema, updateCalendarSourceSchema } from "@shared/schema";
+import { calendarSyncService } from "./calendar-sync";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -126,6 +127,173 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(events);
     } catch (error) {
       res.status(500).json({ message: "Failed to search events" });
+    }
+  });
+
+  // Calendar sources routes
+  app.get("/api/calendar-sources", async (req, res) => {
+    try {
+      const sources = await storage.getAllCalendarSources();
+      res.json(sources);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch calendar sources" });
+    }
+  });
+
+  app.post("/api/calendar-sources", async (req, res) => {
+    try {
+      const validatedData = insertCalendarSourceSchema.parse(req.body);
+      const source = await storage.createCalendarSource(validatedData);
+      res.status(201).json(source);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid calendar source data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create calendar source" });
+    }
+  });
+
+  app.patch("/api/calendar-sources/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid calendar source ID" });
+      }
+
+      const validatedData = updateCalendarSourceSchema.parse(req.body);
+      const source = await storage.updateCalendarSource(id, validatedData);
+      
+      if (!source) {
+        return res.status(404).json({ message: "Calendar source not found" });
+      }
+
+      res.json(source);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid calendar source data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update calendar source" });
+    }
+  });
+
+  app.delete("/api/calendar-sources/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid calendar source ID" });
+      }
+
+      // Get the source to know what events to clean up
+      const source = await storage.getCalendarSource(id);
+      if (!source) {
+        return res.status(404).json({ message: "Calendar source not found" });
+      }
+
+      // Delete all events from this source
+      await storage.deleteEventsBySource(source.name);
+      
+      // Delete the source itself
+      const deleted = await storage.deleteCalendarSource(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Calendar source not found" });
+      }
+
+      res.json({ message: "Calendar source and associated events deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete calendar source" });
+    }
+  });
+
+  // Sync specific calendar
+  app.post("/api/calendar-sources/:id/sync", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid calendar source ID" });
+      }
+
+      const source = await storage.getCalendarSource(id);
+      if (!source) {
+        return res.status(404).json({ message: "Calendar source not found" });
+      }
+
+      if (!source.isActive) {
+        return res.status(400).json({ message: "Calendar source is not active" });
+      }
+
+      // Delete existing events from this source
+      await storage.deleteEventsBySource(source.name);
+
+      // Sync new events
+      const events = await calendarSyncService.syncCalendar(source);
+      const createdEvents = await storage.bulkCreateEvents(events);
+
+      // Update last synced time
+      await storage.updateCalendarSource(id, { 
+        lastSynced: new Date() 
+      });
+
+      res.json({ 
+        message: `Successfully synced ${createdEvents.length} events from ${source.name}`,
+        eventsCount: createdEvents.length 
+      });
+    } catch (error) {
+      console.error("Error syncing calendar:", error);
+      res.status(500).json({ 
+        message: "Failed to sync calendar", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  // Sync all active calendars
+  app.post("/api/calendar-sources/sync-all", async (req, res) => {
+    try {
+      const sources = await storage.getAllCalendarSources();
+      const activeSources = sources.filter(source => source.isActive);
+      
+      let totalEvents = 0;
+      const results = [];
+
+      for (const source of activeSources) {
+        try {
+          // Delete existing events from this source
+          await storage.deleteEventsBySource(source.name);
+
+          // Sync new events
+          const events = await calendarSyncService.syncCalendar(source);
+          const createdEvents = await storage.bulkCreateEvents(events);
+          
+          // Update last synced time
+          await storage.updateCalendarSource(source.id, { 
+            lastSynced: new Date() 
+          });
+
+          totalEvents += createdEvents.length;
+          results.push({
+            source: source.name,
+            eventsCount: createdEvents.length,
+            success: true
+          });
+        } catch (error) {
+          console.error(`Error syncing ${source.name}:`, error);
+          results.push({
+            source: source.name,
+            eventsCount: 0,
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error"
+          });
+        }
+      }
+
+      res.json({ 
+        message: `Sync completed for ${activeSources.length} calendars`,
+        totalEvents,
+        results 
+      });
+    } catch (error) {
+      console.error("Error syncing all calendars:", error);
+      res.status(500).json({ message: "Failed to sync calendars" });
     }
   });
 
