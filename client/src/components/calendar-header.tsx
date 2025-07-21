@@ -56,6 +56,11 @@ export function CalendarHeader({
           </button>
         </div>
 
+        {/* Toast notifications area in the center */}
+        <div className="flex-1 flex justify-center items-center px-4">
+          <div id="toast-container" className="max-w-md w-full"></div>
+        </div>
+
         <div className="flex items-center space-x-3">
           <button
             onClick={onShowReminders}

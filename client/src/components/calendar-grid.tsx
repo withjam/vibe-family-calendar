@@ -77,7 +77,7 @@ export function CalendarGrid({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
       {/* Days of Week Header */}
       <div className="grid grid-cols-7 bg-slate-100 border-b border-slate-200">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
@@ -91,7 +91,7 @@ export function CalendarGrid({
       </div>
 
       {/* Calendar Days Grid */}
-      <div className="grid grid-cols-7">
+      <div className="grid grid-cols-7 flex-1">
         {days.map(day => {
           const dayEvents = getEventsForDay(day);
           const isCurrentMonth = isSameMonth(day, currentDate);
@@ -99,7 +99,7 @@ export function CalendarGrid({
           return (
             <div
               key={day.toISOString()}
-              className={`calendar-cell border-r border-b border-slate-200 p-3 ${
+              className={`calendar-cell border-r border-b border-slate-200 p-3 flex flex-col ${
                 isCurrentMonth 
                   ? "bg-white hover:bg-slate-50" 
                   : "bg-slate-50"
@@ -117,7 +117,7 @@ export function CalendarGrid({
                 </span>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1 flex-1 overflow-y-auto">
                 {dayEvents.map(event => (
                   <div
                     key={event.id}

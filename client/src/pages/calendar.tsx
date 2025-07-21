@@ -134,7 +134,7 @@ export default function Calendar() {
   }
 
   return (
-    <div className="min-h-screen p-6 bg-slate-50">
+    <div className="min-h-screen flex flex-col p-6 bg-slate-50">
       <CalendarHeader
         currentDate={currentDate}
         onNavigateMonth={navigateMonth}
@@ -145,12 +145,14 @@ export default function Calendar() {
         onShowReminders={() => setShowRemindersPanel(true)}
       />
 
-      <CalendarGrid
-        currentDate={currentDate}
-        events={events}
-        selectedEventId={selectedEventId}
-        onEventSelect={handleEventSelect}
-      />
+      <div className="flex-1 flex flex-col">
+        <CalendarGrid
+          currentDate={currentDate}
+          events={events}
+          selectedEventId={selectedEventId}
+          onEventSelect={handleEventSelect}
+        />
+      </div>
 
       {selectedEventId && selectedEvent && (
         <EventModal

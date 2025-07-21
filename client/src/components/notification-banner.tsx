@@ -17,6 +17,7 @@ interface TriggeredReminder {
 export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
   const [activeNotifications, setActiveNotifications] = useState<TriggeredReminder[]>([]);
   const [checkedReminders, setCheckedReminders] = useState<Set<string>>(new Set());
+  const [progressBars, setProgressBars] = useState<Map<string, number>>(new Map());
 
   const { data: events = [] } = useQuery({
     queryKey: ["/api/events/range"],
@@ -88,11 +89,27 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
       if (newNotifications.length > 0) {
         setActiveNotifications(prev => [...prev, ...newNotifications]);
         
-        // Auto-dismiss each notification after 60 seconds
+        // Set up progress bar and auto-dismiss for each notification
         newNotifications.forEach(notification => {
+          // Initialize progress bar at 100%
+          setProgressBars(prev => new Map(prev.set(notification.id, 100)));
+          
+          // Update progress bar every 600ms (100 times in 60 seconds)
+          let progress = 100;
+          const progressInterval = setInterval(() => {
+            progress -= 100/100; // Decrease by 1% every 600ms
+            setProgressBars(prev => new Map(prev.set(notification.id, Math.max(0, progress))));
+            
+            if (progress <= 0) {
+              clearInterval(progressInterval);
+            }
+          }, 600);
+          
+          // Auto-dismiss after 60 seconds
           setTimeout(() => {
             dismissNotification(notification.id);
-          }, 60000); // 60 seconds
+            clearInterval(progressInterval);
+          }, 60000);
         });
       }
     };
@@ -129,6 +146,11 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
 
   const dismissNotification = (notificationId: string) => {
     setActiveNotifications(prev => prev.filter(n => n.id !== notificationId));
+    setProgressBars(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(notificationId);
+      return newMap;
+    });
   };
 
   const handleEventClick = (eventId: number, notificationId: string) => {
@@ -143,12 +165,16 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
       {activeNotifications.map((notification) => (
         <div
           key={notification.id}
-          className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-6 rounded-xl shadow-2xl border-4 border-amber-400 animate-pulse cursor-pointer transform scale-105 hover:scale-110 transition-transform"
+          className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-6 rounded-xl shadow-2xl border-4 border-amber-400 animate-pulse cursor-pointer transform scale-105 hover:scale-110 transition-transform relative overflow-hidden"
           onClick={() => handleEventClick(notification.event.id, notification.id)}
           style={{
             animation: 'gentle-shake 0.5s ease-in-out 0s 3, fade-in 0.3s ease-out'
           }}
         >
+          {/* Progress bar at the bottom */}
+          <div className="absolute bottom-0 left-0 h-2 bg-amber-600 transition-all duration-600 ease-linear rounded-b-xl"
+               style={{ width: `${progressBars.get(notification.id) || 100}%` }}>
+          </div>
           <div className="flex justify-between items-start">
             <div className="flex-1 pr-3">
               <div className="flex items-center space-x-3 mb-2">
