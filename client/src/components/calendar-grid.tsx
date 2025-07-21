@@ -7,6 +7,7 @@ interface CalendarGridProps {
   events: Event[];
   selectedEventId: number | null;
   onEventSelect: (eventId: number) => void;
+  onDayClick?: (date: Date) => void;
 }
 
 export function CalendarGrid({
@@ -14,6 +15,7 @@ export function CalendarGrid({
   events,
   selectedEventId,
   onEventSelect,
+  onDayClick,
 }: CalendarGridProps) {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -96,10 +98,18 @@ export function CalendarGrid({
           const dayEvents = getEventsForDay(day);
           const isCurrentMonth = isSameMonth(day, currentDate);
 
+          const handleCellClick = (e: React.MouseEvent) => {
+            // Only handle day click if clicking on the cell itself, not on an event
+            if (e.target === e.currentTarget && onDayClick && isCurrentMonth) {
+              onDayClick(day);
+            }
+          };
+
           return (
             <div
               key={day.toISOString()}
-              className={`calendar-cell border-r border-b border-slate-200 p-3 flex flex-col ${
+              onClick={handleCellClick}
+              className={`calendar-cell border-r border-b border-slate-200 p-3 flex flex-col cursor-pointer ${
                 isCurrentMonth 
                   ? "bg-white hover:bg-slate-50" 
                   : "bg-slate-50"
@@ -107,7 +117,7 @@ export function CalendarGrid({
                 days.indexOf(day) >= days.length - 7 ? "border-b-0" : ""
               }`}
             >
-              <div className="flex justify-end mb-2">
+              <div className="flex justify-end mb-2" onClick={handleCellClick}>
                 <span
                   className={`font-semibold ${
                     isCurrentMonth ? "text-slate-800" : "text-slate-400"
@@ -121,7 +131,10 @@ export function CalendarGrid({
                 {dayEvents.map(event => (
                   <div
                     key={event.id}
-                    onClick={() => onEventSelect(event.id)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent day click when clicking on event
+                      onEventSelect(event.id);
+                    }}
                     className={`event-item text-xs px-2 py-1 rounded font-medium flex justify-between cursor-pointer ${getEventColor(event)} ${
                       selectedEventId === event.id ? "selected" : ""
                     }`}

@@ -101,6 +101,7 @@ Preferred communication style: Simple, everyday language.
 - ✅ Eliminated event categories in favor of calendar-based organization
 - ✅ Calendar source displayed prominently with color indicators and sync status
 - ✅ Streamlined event creation form by removing category selection
+- ✅ Calendar day click shortcut: clicking empty calendar cells opens Add Event dialog with pre-selected date
 
 ## Key Components
 

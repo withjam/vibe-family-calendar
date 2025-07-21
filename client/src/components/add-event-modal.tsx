@@ -7,10 +7,11 @@ import type { Event, InsertEvent, CalendarSource } from "@shared/schema";
 
 interface AddEventModalProps {
   event?: Event | null;
+  selectedDate?: Date | null;
   onClose: () => void;
 }
 
-export function AddEventModal({ event, onClose }: AddEventModalProps) {
+export function AddEventModal({ event, selectedDate, onClose }: AddEventModalProps) {
   const isEditing = !!event;
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -34,10 +35,16 @@ export function AddEventModal({ event, onClose }: AddEventModalProps) {
     return format(now, "HH:mm");
   };
 
+  const getDefaultDate = () => {
+    if (event) return format(new Date(event.startTime), "yyyy-MM-dd");
+    if (selectedDate) return format(selectedDate, "yyyy-MM-dd");
+    return format(new Date(), "yyyy-MM-dd");
+  };
+
   const [formData, setFormData] = useState({
     title: event?.title || "",
     description: event?.description || "",
-    startDate: event ? format(new Date(event.startTime), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
+    startDate: getDefaultDate(),
     startTime: event ? format(new Date(event.startTime), "HH:mm") : getCurrentTime(),
     endTime: event?.endTime ? format(new Date(event.endTime), "HH:mm") : getEndTime(),
     location: event?.location || "",

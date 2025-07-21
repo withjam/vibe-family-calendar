@@ -20,6 +20,7 @@ export default function Calendar() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showRemindersPanel, setShowRemindersPanel] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -116,12 +117,20 @@ export default function Calendar() {
 
   const handleAddEvent = () => {
     setEditingEvent(null);
+    setSelectedDate(null);
+    setShowAddModal(true);
+  };
+
+  const handleDayClick = (date: Date) => {
+    setEditingEvent(null);
+    setSelectedDate(date);
     setShowAddModal(true);
   };
 
   const handleModalClose = () => {
     setShowAddModal(false);
     setEditingEvent(null);
+    setSelectedDate(null);
     queryClient.invalidateQueries({ queryKey: ["/api/events/range"] });
   };
 
@@ -151,6 +160,7 @@ export default function Calendar() {
           events={events}
           selectedEventId={selectedEventId}
           onEventSelect={handleEventSelect}
+          onDayClick={handleDayClick}
         />
       </div>
 
@@ -167,6 +177,7 @@ export default function Calendar() {
       {showAddModal && (
         <AddEventModal
           event={editingEvent}
+          selectedDate={selectedDate}
           onClose={handleModalClose}
         />
       )}
