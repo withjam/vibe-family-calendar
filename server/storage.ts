@@ -133,7 +133,14 @@ export class MemStorage implements IStorage {
 
   async createEvent(insertEvent: InsertEvent): Promise<Event> {
     const id = this.currentEventId++;
-    const event: Event = { ...insertEvent, id };
+    const event: Event = { 
+      ...insertEvent, 
+      id,
+      description: insertEvent.description || null,
+      location: insertEvent.location || null,
+      endTime: insertEvent.endTime || null,
+      reminders: insertEvent.reminders || null
+    };
     this.events.set(id, event);
     return event;
   }
