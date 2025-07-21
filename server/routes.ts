@@ -63,6 +63,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertEventSchema.parse(req.body);
       const event = await storage.createEvent(validatedData);
+      
+      // Note: Events created in imported calendars are stored locally only
+      // Google Calendar and other external calendars don't support write-back via iCal URLs
+      // This is a limitation of read-only iCal feeds - they don't accept new events
+      // To add events to Google Calendar, users would need OAuth integration
+      
       res.status(201).json(event);
     } catch (error) {
       if (error instanceof z.ZodError) {

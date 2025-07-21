@@ -218,10 +218,15 @@ export function AddEventModal({ event, onClose }: AddEventModalProps) {
               <option value="">Local Calendar (Default)</option>
               {calendarSources.map((source: CalendarSource) => (
                 <option key={source.id} value={source.name}>
-                  {source.name}
+                  {source.name} (Local Copy Only)
                 </option>
               ))}
             </select>
+            {formData.sourceCalendar && (
+              <p className="text-xs text-amber-600 mt-1">
+                Note: Events are stored locally only. External calendars like Google Calendar don't support automatic syncing of new events through iCal feeds.
+              </p>
+            )}
             {isEditing && event?.sourceCalendar && (
               <p className="text-xs text-slate-500 mt-1">
                 Imported events cannot be moved to different calendars

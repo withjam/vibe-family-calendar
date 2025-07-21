@@ -61,9 +61,9 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
           if (reminderTime) {
             const reminderId = `${event.id}-${reminderText}-${reminderTime.getTime()}`;
             
-            // Check if reminder should trigger (within 1 minute window)
+            // Check if reminder should trigger (current time has passed reminder time)
             const timeDiff = now.getTime() - reminderTime.getTime();
-            const shouldTrigger = timeDiff >= 0 && timeDiff <= 60000; // Within 1 minute
+            const shouldTrigger = timeDiff >= 0 && timeDiff <= 300000; // Within 5 minutes of trigger time
             
             if (shouldTrigger && !checkedReminders.has(reminderId)) {
               newNotifications.push({
@@ -74,7 +74,7 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
               });
               
               // Mark as checked so it doesn't trigger again
-              setCheckedReminders(prev => new Set([...prev, reminderId]));
+              setCheckedReminders(prev => new Set([...Array.from(prev), reminderId]));
             }
           }
         });
@@ -100,29 +100,29 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
   if (activeNotifications.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm">
+    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 space-y-4 max-w-lg w-full px-4">
       {activeNotifications.map((notification) => (
         <div
           key={notification.id}
-          className="bg-amber-500 text-white p-4 rounded-lg shadow-2xl border-l-4 border-amber-600 animate-pulse cursor-pointer"
+          className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-6 rounded-xl shadow-2xl border-4 border-amber-400 animate-bounce cursor-pointer transform scale-105 hover:scale-110 transition-transform"
           onClick={() => handleEventClick(notification.event.id, notification.id)}
         >
           <div className="flex justify-between items-start">
-            <div className="flex-1 pr-2">
-              <div className="flex items-center space-x-2 mb-1">
-                <span className="text-lg">🔔</span>
-                <span className="font-semibold text-sm">Reminder</span>
+            <div className="flex-1 pr-3">
+              <div className="flex items-center space-x-3 mb-2">
+                <span className="text-2xl animate-pulse">🔔</span>
+                <span className="font-bold text-lg">REMINDER ALERT</span>
               </div>
-              <h4 className="font-bold text-base mb-1 leading-tight">
+              <h4 className="font-bold text-xl mb-2 leading-tight">
                 {notification.event.title}
               </h4>
-              <p className="text-xs opacity-90 mb-2">
+              <p className="text-base opacity-95 mb-3 font-medium">
                 {notification.reminderText}
               </p>
-              <div className="text-xs opacity-80">
-                Event: {format(new Date(notification.event.startTime), "h:mm a")}
+              <div className="text-sm opacity-90 space-y-1">
+                <div>Event starts: {format(new Date(notification.event.startTime), "h:mm a")}</div>
                 {notification.event.location && (
-                  <span> • {notification.event.location}</span>
+                  <div>Location: {notification.event.location}</div>
                 )}
               </div>
             </div>
@@ -131,13 +131,13 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
                 e.stopPropagation();
                 dismissNotification(notification.id);
               }}
-              className="text-white hover:text-amber-200 text-lg font-bold flex-shrink-0"
+              className="text-white hover:text-amber-200 text-2xl font-bold flex-shrink-0 bg-amber-600 hover:bg-amber-700 rounded-full w-8 h-8 flex items-center justify-center"
             >
               ×
             </button>
           </div>
-          <div className="mt-2 text-xs opacity-75">
-            Click to view event details
+          <div className="mt-3 text-sm opacity-90 font-medium bg-amber-600 rounded-lg p-2 text-center">
+            Click anywhere to view event details
           </div>
         </div>
       ))}
