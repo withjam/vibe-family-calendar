@@ -13,13 +13,24 @@ export class CalendarSyncServiceImpl implements CalendarSyncService {
     try {
       console.log(`Syncing calendar: ${source.name} from ${source.url}`);
       
+      // Convert URL to proper iCal format if needed
+      const icalUrl = this.convertToICalUrl(source.url);
+      console.log(`Converted URL: ${icalUrl}`);
+      
       // Fetch calendar data
-      const response = await fetch(source.url);
+      const response = await fetch(icalUrl);
       if (!response.ok) {
         throw new Error(`Failed to fetch calendar: ${response.status} ${response.statusText}`);
       }
       
       const icalData = await response.text();
+      console.log(`Fetched ${icalData.length} characters of iCal data`);
+      
+      // Check if this is actually iCal data
+      if (!icalData.includes('BEGIN:VCALENDAR')) {
+        console.log('Response does not contain iCal data, first 200 chars:', icalData.substring(0, 200));
+        throw new Error('The URL does not return valid iCal data. Please use the "Public address in iCal format" from your Google Calendar settings.');
+      }
       
       // Parse and convert to events
       const events = await this.parseICalData(icalData, source.name);
@@ -31,6 +42,25 @@ export class CalendarSyncServiceImpl implements CalendarSyncService {
       console.error(`Error syncing calendar ${source.name}:`, error);
       throw error;
     }
+  }
+
+  private convertToICalUrl(url: string): string {
+    // Convert Google Calendar embed URLs to iCal URLs
+    if (url.includes('calendar.google.com/calendar/embed')) {
+      const urlObj = new URL(url);
+      const src = urlObj.searchParams.get('src');
+      if (src) {
+        return `https://calendar.google.com/calendar/ical/${encodeURIComponent(src)}/public/basic.ics`;
+      }
+    }
+    
+    // Convert webcal:// to https://
+    if (url.startsWith('webcal://')) {
+      return url.replace('webcal://', 'https://');
+    }
+    
+    // Return as-is for other URLs
+    return url;
   }
 
   async parseICalData(icalData: string, sourceCalendar: string): Promise<InsertEvent[]> {

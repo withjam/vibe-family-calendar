@@ -180,8 +180,13 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
       type: "ical" as const,
     },
     {
-      name: "Your Google Calendar",
+      name: "Google Calendar (Public)",
       url: "https://calendar.google.com/calendar/ical/YOUR_EMAIL@gmail.com/public/basic.ics",
+      type: "google" as const,
+    },
+    {
+      name: "Google Calendar (Private)",
+      url: "https://calendar.google.com/calendar/ical/CALENDAR_ID/private-SECRET_KEY/basic.ics",
       type: "google" as const,
     }
   ];
@@ -376,10 +381,29 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
 
         <div className="mt-8 p-4 bg-blue-50 rounded-lg">
           <h4 className="font-medium text-blue-900 mb-2">📝 How to get calendar URLs:</h4>
-          <div className="text-sm text-blue-800 space-y-1">
-            <p><strong>Google Calendar:</strong> Go to Settings → Calendar settings → Integrate calendar → Copy "Public address in iCal format"</p>
-            <p><strong>Outlook:</strong> Go to Calendar → Share → Publish calendar → Copy ICS link</p>
-            <p><strong>Apple iCloud:</strong> Go to iCloud.com → Calendar → Share calendar → Public calendar</p>
+          <div className="text-sm text-blue-800 space-y-2">
+            <div>
+              <p><strong>Google Calendar:</strong></p>
+              <ol className="list-decimal list-inside ml-4 space-y-1">
+                <li>Go to Google Calendar → Settings → Settings for my calendars</li>
+                <li>Click on your calendar name</li>
+                <li>Scroll to "Integrate calendar" section</li>
+                <li>Copy the "Public address in iCal format" (ends with .ics)</li>
+                <li>Or copy "Secret address in iCal format" for private calendars</li>
+              </ol>
+            </div>
+            <div>
+              <p><strong>Outlook:</strong> Calendar → Share → Publish calendar → Copy ICS link</p>
+            </div>
+            <div>
+              <p><strong>Apple iCloud:</strong> iCloud.com → Calendar → Share calendar → Public calendar</p>
+            </div>
+          </div>
+          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded">
+            <p className="text-sm text-amber-800">
+              <strong>Note:</strong> Make sure to use the ".ics" URL format, not the embed or HTML view URLs. 
+              The system will automatically convert some Google Calendar URLs if needed.
+            </p>
           </div>
         </div>
       </div>
