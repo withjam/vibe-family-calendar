@@ -69,8 +69,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (validatedData.sourceCalendar) {
         const calendarSource = await storage.getCalendarSourceByName(validatedData.sourceCalendar);
         
+        console.log('Calendar source found:', calendarSource);
+        
         if (calendarSource?.hasOAuthCredentials && calendarSource.oauthRefreshToken && calendarSource.googleCalendarId) {
           try {
+            console.log('Setting OAuth credentials and creating event in Google Calendar...');
             googleOAuthService.setCredentials(calendarSource.oauthRefreshToken);
             
             const googleEvent = await googleOAuthService.createEvent(
@@ -88,11 +91,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Store the Google event ID for future updates/deletions
             validatedData.externalId = googleEvent.id;
+            console.log('Event successfully synced to Google Calendar with ID:', googleEvent.id);
             
           } catch (oauthError) {
             console.error('Failed to create event in Google Calendar:', oauthError);
             // Continue with local creation even if Google sync fails
           }
+        } else {
+          console.log('Calendar source does not have OAuth credentials or is missing required fields');
         }
       }
       

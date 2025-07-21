@@ -39,6 +39,8 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
       const now = new Date();
       const newNotifications: TriggeredReminder[] = [];
 
+      console.log('Checking reminders for', events.length, 'events at', now.toISOString());
+
       events.forEach((event: Event) => {
         if (!event.reminders || event.reminders.length === 0) return;
 
@@ -65,7 +67,10 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
             const timeDiff = now.getTime() - reminderTime.getTime();
             const shouldTrigger = timeDiff >= 0 && timeDiff <= 300000; // Within 5 minutes of trigger time
             
+            console.log('Event:', event.title, 'Reminder:', reminderText, 'Time diff:', timeDiff, 'Should trigger:', shouldTrigger);
+            
             if (shouldTrigger && !checkedReminders.has(reminderId)) {
+              console.log('Triggering reminder for:', event.title);
               newNotifications.push({
                 event,
                 reminderText,

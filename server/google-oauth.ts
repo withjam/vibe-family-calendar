@@ -65,20 +65,22 @@ export class GoogleOAuthService {
   async createEvent(calendarId: string, eventData: any) {
     const calendar = google.calendar({ version: 'v3', auth: this.oauth2Client });
     
+    console.log('Creating Google Calendar event with data:', eventData);
+    
+    // Ensure proper date formatting
+    const startDate = new Date(eventData.startTime);
+    const endDate = eventData.endTime ? new Date(eventData.endTime) : new Date(startDate.getTime() + 60 * 60 * 1000); // Default 1 hour duration
+    
     const event = {
       summary: eventData.title,
-      description: eventData.description,
-      location: eventData.location,
+      description: eventData.description || '',
+      location: eventData.location || '',
       start: eventData.isAllDay 
-        ? { date: eventData.startTime.split('T')[0] }
-        : { dateTime: eventData.startTime, timeZone: 'America/New_York' },
-      end: eventData.endTime 
-        ? eventData.isAllDay 
-          ? { date: eventData.endTime.split('T')[0] }
-          : { dateTime: eventData.endTime, timeZone: 'America/New_York' }
-        : eventData.isAllDay
-          ? { date: eventData.startTime.split('T')[0] }
-          : { dateTime: new Date(new Date(eventData.startTime).getTime() + 60 * 60 * 1000).toISOString(), timeZone: 'America/New_York' },
+        ? { date: startDate.toISOString().split('T')[0] }
+        : { dateTime: startDate.toISOString(), timeZone: 'America/New_York' },
+      end: eventData.isAllDay 
+        ? { date: endDate.toISOString().split('T')[0] }
+        : { dateTime: endDate.toISOString(), timeZone: 'America/New_York' }
     };
 
     if (eventData.reminders && eventData.reminders.length > 0) {
@@ -95,11 +97,14 @@ export class GoogleOAuthService {
       };
     }
 
+    console.log('Google Calendar event object:', JSON.stringify(event, null, 2));
+    
     const response = await calendar.events.insert({
       calendarId: calendarId,
       resource: event,
     });
 
+    console.log('Google Calendar event created successfully:', response.data.id);
     return response.data;
   }
 
