@@ -26,17 +26,7 @@ export function EventModal({
       return response.json();
     },
   });
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      work: "bg-blue-500",
-      personal: "bg-purple-500",
-      family: "bg-green-500",
-      health: "bg-red-500",
-      sports: "bg-amber-500",
-      default: "bg-gray-500",
-    };
-    return colors[category as keyof typeof colors] || colors.default;
-  };
+
 
   const formatDateTime = (dateTime: string | Date) => {
     return format(new Date(dateTime), "EEEE, MMMM do, yyyy");
@@ -73,37 +63,34 @@ export function EventModal({
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center space-x-3">
-            <div className={`w-5 h-5 ${getCategoryColor(event.category)} rounded-full`}></div>
-            <span className="text-slate-600 font-medium capitalize">{event.category}</span>
-          </div>
+          {event.sourceCalendar && (
+            <div className="flex items-center space-x-3 pb-2 border-b border-slate-200">
+              {(() => {
+                const source = calendarSources.find((s: CalendarSource) => s.name === event.sourceCalendar);
+                return (
+                  <>
+                    {source?.color && (
+                      <div 
+                        className="w-4 h-4 rounded-full" 
+                        style={{ backgroundColor: source.color }}
+                      ></div>
+                    )}
+                    <span className="text-slate-700 font-medium">{event.sourceCalendar}</span>
+                    {source?.hasOAuthCredentials && (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                        Synced
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
 
           <div className="flex items-center space-x-3">
             <span className="text-slate-500">📅</span>
             <span className="text-slate-700">{formatDateTime(event.startTime)}</span>
           </div>
-
-          {event.sourceCalendar && (
-            <div className="flex items-center space-x-3">
-              <span className="text-slate-500">📋</span>
-              <div className="flex items-center space-x-2">
-                {(() => {
-                  const source = calendarSources.find((s: CalendarSource) => s.name === event.sourceCalendar);
-                  return (
-                    <>
-                      {source?.color && (
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: source.color }}
-                        ></div>
-                      )}
-                      <span className="text-slate-700">{event.sourceCalendar}</span>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-          )}
 
           <div className="flex items-center space-x-3">
             <span className="text-slate-500">🕐</span>

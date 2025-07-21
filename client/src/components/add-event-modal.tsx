@@ -41,7 +41,6 @@ export function AddEventModal({ event, onClose }: AddEventModalProps) {
     startTime: event ? format(new Date(event.startTime), "HH:mm") : getCurrentTime(),
     endTime: event?.endTime ? format(new Date(event.endTime), "HH:mm") : getEndTime(),
     location: event?.location || "",
-    category: event?.category || "personal",
     sourceCalendar: event?.sourceCalendar || null,
     isAllDay: event?.isAllDay || false,
     reminders: event?.reminders || [],
@@ -135,7 +134,6 @@ export function AddEventModal({ event, onClose }: AddEventModalProps) {
       startTime: startDateTime,
       endTime: endDateTime,
       location: formData.location.trim() || null,
-      category: formData.category,
       sourceCalendar: formData.sourceCalendar,
       isAllDay: formData.isAllDay,
       reminders: formData.reminders,
@@ -192,35 +190,17 @@ export function AddEventModal({ event, onClose }: AddEventModalProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Date *
-              </label>
-              <input
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Category
-              </label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="personal">Personal</option>
-                <option value="work">Work</option>
-                <option value="family">Family</option>
-                <option value="health">Health</option>
-                <option value="sports">Sports</option>
-              </select>
-            </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Date *
+            </label>
+            <input
+              type="date"
+              value={formData.startDate}
+              onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+              className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              required
+            />
           </div>
 
           {/* Calendar Source Selector */}

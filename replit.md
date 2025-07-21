@@ -98,6 +98,9 @@ Preferred communication style: Simple, everyday language.
 - ✅ Curated color palette: 10 main colors with light/medium tints (30 total) in organized 3x10 grid
 - ✅ Removed manual calendar type selection since auto-detection handles it perfectly
 - ✅ Improved calendar import UX with reduced clicks and error prevention
+- ✅ Eliminated event categories in favor of calendar-based organization
+- ✅ Calendar source displayed prominently with color indicators and sync status
+- ✅ Streamlined event creation form by removing category selection
 
 ## Key Components
 
