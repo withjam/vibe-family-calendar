@@ -130,10 +130,40 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
       return response.json();
     },
     onSuccess: (data: { authUrl: string }) => {
-      window.open(data.authUrl, "_blank", "width=600,height=600");
+      // Open OAuth URL in popup
+      const popup = window.open(data.authUrl, "oauth", "width=600,height=600,scrollbars=yes,resizable=yes");
+      
+      // Listen for messages from the popup
+      const messageListener = (event: MessageEvent) => {
+        if (event.data?.type === 'oauth-success') {
+          window.removeEventListener('message', messageListener);
+          queryClient.invalidateQueries({ queryKey: ["/api/calendar-sources"] });
+          toast({
+            title: "OAuth enabled successfully",
+            description: "Your calendar is now connected for bidirectional sync.",
+          });
+          popup?.close();
+        } else if (event.data?.type === 'oauth-error') {
+          window.removeEventListener('message', messageListener);
+          toast({
+            title: "OAuth authorization failed",
+            description: "Please try again.",
+            variant: "destructive",
+          });
+          popup?.close();
+        }
+      };
+      
+      window.addEventListener('message', messageListener);
+      
+      // Fallback: Close listener after 5 minutes
+      setTimeout(() => {
+        window.removeEventListener('message', messageListener);
+      }, 300000);
+      
       toast({
         title: "OAuth authorization opened",
-        description: "Complete authorization in the popup window, then refresh this page.",
+        description: "Complete authorization in the popup window.",
       });
     },
     onError: () => {

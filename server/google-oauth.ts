@@ -5,12 +5,26 @@ export class GoogleOAuthService {
   private oauth2Client: any;
   
   constructor() {
+    // Determine the correct redirect URI for the environment
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || this.getRedirectUri();
+    
     // Initialize OAuth2 client - credentials would come from environment variables
     this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
+      redirectUri
     );
+  }
+
+  private getRedirectUri(): string {
+    // Check if we're in a Replit environment
+    if (process.env.REPLIT_DOMAINS) {
+      const domains = process.env.REPLIT_DOMAINS.split(',');
+      return `https://${domains[0]}/api/oauth/callback`;
+    }
+    
+    // Fallback to localhost for local development
+    return 'http://localhost:5000/api/oauth/callback';
   }
 
   // Generate OAuth URL for user authorization

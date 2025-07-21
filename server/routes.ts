@@ -278,11 +278,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
         googleCalendarId: primaryCalendar.id
       });
 
-      // Redirect back to the application
-      res.redirect("/#oauth-success");
+      // Return a success page that can close the popup and notify the parent window
+      res.send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>OAuth Success</title>
+            <style>
+              body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                text-align: center; 
+                padding: 50px;
+                background: #f8f9fa;
+              }
+              .success {
+                background: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+                padding: 20px;
+                border-radius: 8px;
+                margin: 20px auto;
+                max-width: 400px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="success">
+              <h2>✅ Authorization Successful!</h2>
+              <p>Your Google Calendar has been connected successfully.</p>
+              <p>You can now close this window and return to the calendar app.</p>
+            </div>
+            <script>
+              // Try to close the popup automatically
+              setTimeout(() => {
+                if (window.opener) {
+                  window.opener.postMessage({ type: 'oauth-success' }, '*');
+                }
+                window.close();
+              }, 2000);
+            </script>
+          </body>
+        </html>
+      `);
     } catch (error) {
       console.error("OAuth callback error:", error);
-      res.redirect("/#oauth-error");
+      res.send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>OAuth Error</title>
+            <style>
+              body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                text-align: center; 
+                padding: 50px;
+                background: #f8f9fa;
+              }
+              .error {
+                background: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+                padding: 20px;
+                border-radius: 8px;
+                margin: 20px auto;
+                max-width: 400px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="error">
+              <h2>❌ Authorization Failed</h2>
+              <p>There was an error connecting your Google Calendar.</p>
+              <p>Please close this window and try again.</p>
+            </div>
+            <script>
+              setTimeout(() => {
+                if (window.opener) {
+                  window.opener.postMessage({ type: 'oauth-error' }, '*');
+                }
+                window.close();
+              }, 2000);
+            </script>
+          </body>
+        </html>
+      `);
     }
   });
 
