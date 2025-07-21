@@ -3,9 +3,11 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertEventSchema, updateEventSchema, insertCalendarSourceSchema, updateCalendarSourceSchema } from "@shared/schema";
 import { calendarSyncService } from "./calendar-sync";
+import { GoogleOAuthService } from "./google-oauth";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  const googleOAuthService = new GoogleOAuthService();
   // Get all events
   app.get("/api/events", async (req, res) => {
     try {
@@ -62,13 +64,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/events", async (req, res) => {
     try {
       const validatedData = insertEventSchema.parse(req.body);
+      
+      // If creating event in an OAuth-enabled calendar, sync to Google Calendar
+      if (validatedData.sourceCalendar) {
+        const calendarSource = await storage.getCalendarSourceByName(validatedData.sourceCalendar);
+        
+        if (calendarSource?.hasOAuthCredentials && calendarSource.oauthRefreshToken && calendarSource.googleCalendarId) {
+          try {
+            googleOAuthService.setCredentials(calendarSource.oauthRefreshToken);
+            
+            const googleEvent = await googleOAuthService.createEvent(
+              calendarSource.googleCalendarId,
+              {
+                title: validatedData.title,
+                description: validatedData.description,
+                location: validatedData.location,
+                startTime: validatedData.startTime.toISOString(),
+                endTime: validatedData.endTime?.toISOString(),
+                isAllDay: validatedData.isAllDay,
+                reminders: validatedData.reminders
+              }
+            );
+            
+            // Store the Google event ID for future updates/deletions
+            validatedData.externalId = googleEvent.id;
+            
+          } catch (oauthError) {
+            console.error('Failed to create event in Google Calendar:', oauthError);
+            // Continue with local creation even if Google sync fails
+          }
+        }
+      }
+      
       const event = await storage.createEvent(validatedData);
-      
-      // Note: Events created in imported calendars are stored locally only
-      // Google Calendar and other external calendars don't support write-back via iCal URLs
-      // This is a limitation of read-only iCal feeds - they don't accept new events
-      // To add events to Google Calendar, users would need OAuth integration
-      
       res.status(201).json(event);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -143,6 +171,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(sources);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch calendar sources" });
+    }
+  });
+
+  // Generate OAuth URL for calendar source
+  app.post("/api/calendar-sources/:id/oauth-url", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid calendar source ID" });
+      }
+
+      const authUrl = googleOAuthService.getAuthUrl(id);
+      res.json({ authUrl });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to generate OAuth URL" });
+    }
+  });
+
+  // Handle OAuth callback
+  app.get("/api/oauth/callback", async (req, res) => {
+    try {
+      const { code, state } = req.query;
+      
+      if (!code || !state) {
+        return res.status(400).json({ message: "Missing authorization code or state" });
+      }
+
+      const calendarSourceId = parseInt(state as string);
+      if (isNaN(calendarSourceId)) {
+        return res.status(400).json({ message: "Invalid state parameter" });
+      }
+
+      // Exchange code for tokens
+      const tokens = await googleOAuthService.exchangeCodeForTokens(code as string);
+      
+      // Get user's calendars to find the calendar ID
+      googleOAuthService.setCredentials(tokens.refresh_token);
+      const userCalendars = await googleOAuthService.getUserCalendars();
+      const primaryCalendar = userCalendars.find(cal => cal.primary) || userCalendars[0];
+      
+      if (!primaryCalendar) {
+        return res.status(400).json({ message: "No calendars found for user" });
+      }
+
+      // Update calendar source with OAuth credentials
+      await storage.updateCalendarSource(calendarSourceId, {
+        hasOAuthCredentials: true,
+        oauthRefreshToken: tokens.refresh_token, // In production, this should be encrypted
+        googleCalendarId: primaryCalendar.id
+      });
+
+      // Redirect back to the application
+      res.redirect("/#oauth-success");
+    } catch (error) {
+      console.error("OAuth callback error:", error);
+      res.redirect("/#oauth-error");
     }
   });
 

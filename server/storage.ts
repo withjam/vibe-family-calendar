@@ -19,6 +19,7 @@ export interface IStorage {
   // Calendar source methods
   getAllCalendarSources(): Promise<CalendarSource[]>;
   getCalendarSource(id: number): Promise<CalendarSource | undefined>;
+  getCalendarSourceByName(name: string): Promise<CalendarSource | undefined>;
   createCalendarSource(source: InsertCalendarSource): Promise<CalendarSource>;
   updateCalendarSource(id: number, source: UpdateCalendarSource): Promise<CalendarSource | undefined>;
   deleteCalendarSource(id: number): Promise<boolean>;
@@ -220,6 +221,15 @@ export class MemStorage implements IStorage {
 
   async getCalendarSource(id: number): Promise<CalendarSource | undefined> {
     return this.calendarSources.get(id);
+  }
+
+  async getCalendarSourceByName(name: string): Promise<CalendarSource | undefined> {
+    for (const source of this.calendarSources.values()) {
+      if (source.name === name) {
+        return source;
+      }
+    }
+    return undefined;
   }
 
   async createCalendarSource(insertSource: InsertCalendarSource): Promise<CalendarSource> {

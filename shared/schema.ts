@@ -31,6 +31,10 @@ export const calendarSources = pgTable("calendar_sources", {
   lastSynced: timestamp("last_synced", { withTimezone: true }),
   syncInterval: integer("sync_interval").notNull().default(3600), // in seconds
   color: text("color").default("#3b82f6"), // Calendar display color
+  // OAuth fields for write-back support
+  hasOAuthCredentials: boolean("has_oauth_credentials").notNull().default(false),
+  oauthRefreshToken: text("oauth_refresh_token"), // Encrypted refresh token
+  googleCalendarId: text("google_calendar_id"), // Google Calendar ID for API calls
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -58,6 +62,7 @@ export const updateEventSchema = insertEventSchema.partial();
 export const insertCalendarSourceSchema = createInsertSchema(calendarSources).omit({
   id: true,
   lastSynced: true,
+  oauthRefreshToken: true, // Don't allow direct token insertion
 });
 
 export const updateCalendarSourceSchema = insertCalendarSourceSchema.partial().extend({

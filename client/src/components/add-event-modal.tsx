@@ -218,13 +218,18 @@ export function AddEventModal({ event, onClose }: AddEventModalProps) {
               <option value="">Local Calendar (Default)</option>
               {calendarSources.map((source: CalendarSource) => (
                 <option key={source.id} value={source.name}>
-                  {source.name} (Local Copy Only)
+                  {source.name} {source.hasOAuthCredentials ? "(✓ OAuth Enabled)" : "(Local Copy Only)"}
                 </option>
               ))}
             </select>
             {formData.sourceCalendar && (
-              <p className="text-xs text-amber-600 mt-1">
-                Note: Events are stored locally only. External calendars like Google Calendar don't support automatic syncing of new events through iCal feeds.
+              <p className="text-xs text-slate-600 mt-1">
+                {(() => {
+                  const selectedSource = calendarSources.find((s: CalendarSource) => s.name === formData.sourceCalendar);
+                  return selectedSource?.hasOAuthCredentials 
+                    ? "✓ This event will be synced to the external calendar"
+                    : "Note: Events are stored locally only. External calendars need OAuth authorization for write-back.";
+                })()}
               </p>
             )}
             {isEditing && event?.sourceCalendar && (

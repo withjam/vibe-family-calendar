@@ -121,6 +121,29 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
     },
   });
 
+  const enableOAuthMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/calendar-sources/${id}/oauth-url`, {
+        method: "POST",
+      });
+      if (!response.ok) throw new Error("Failed to generate OAuth URL");
+      return response.json();
+    },
+    onSuccess: (data: { authUrl: string }) => {
+      window.open(data.authUrl, "_blank", "width=600,height=600");
+      toast({
+        title: "OAuth authorization opened",
+        description: "Complete authorization in the popup window, then refresh this page.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error starting OAuth",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
