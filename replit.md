@@ -95,7 +95,7 @@ Preferred communication style: Simple, everyday language.
 - ✅ Scrollable event descriptions with doubled height (max-h-64) for better readability
 - ✅ Modal overflow protection with viewport-constrained heights
 - ✅ Calendar type auto-detection from URL patterns (Google, WebCal, iCal)
-- ✅ Curated color palette: 30 unique complementary colors in 3x10 grid layout
+- ✅ Curated color palette: 10 main colors with light/medium tints (30 total) in organized 3x10 grid
 - ✅ Removed manual calendar type selection since auto-detection handles it perfectly
 - ✅ Improved calendar import UX with reduced clicks and error prevention
 

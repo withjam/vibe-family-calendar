@@ -12,14 +12,19 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Curated color palette - 30 unique complementary but distinct colors
+  // Curated color palette - 10 main colors + 20 lighter variations (30 total)
   const colorPalette = [
-    "#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6",
-    "#06B6D4", "#F97316", "#84CC16", "#EC4899", "#6366F1",
-    "#14B8A6", "#F43F5E", "#A855F7", "#22C55E", "#FB7185",
-    "#0EA5E9", "#DC2626", "#059669", "#D97706", "#7C3AED",
-    "#0891B2", "#EA580C", "#65A30D", "#DB2777", "#4F46E5",
-    "#0D9488", "#E11D48", "#9333EA", "#16A34A", "#F97316"
+    // Row 1: 10 main distinct colors
+    "#DC2626", "#EA580C", "#CA8A04", "#16A34A", "#059669",
+    "#0284C7", "#2563EB", "#7C3AED", "#C026D3", "#BE185D",
+    
+    // Row 2: Medium tints of the main colors
+    "#F87171", "#FB923C", "#FACC15", "#4ADE80", "#34D399",
+    "#38BDF8", "#60A5FA", "#A78BFA", "#E879F9", "#F472B6",
+    
+    // Row 3: Light tints of the main colors
+    "#FCA5A5", "#FDBA74", "#FDE047", "#86EFAC", "#6EE7B7",
+    "#7DD3FC", "#93C5FD", "#C4B5FD", "#F0ABFC", "#F9A8D4"
   ];
 
   const [formData, setFormData] = useState({
