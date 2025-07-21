@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Event, InsertEvent } from "@shared/schema";
+import type { Event, InsertEvent, CalendarSource } from "@shared/schema";
 
 interface AddEventModalProps {
   event?: Event | null;
@@ -23,6 +23,7 @@ export function AddEventModal({ event, onClose }: AddEventModalProps) {
     endTime: event?.endTime ? format(new Date(event.endTime), "HH:mm") : "10:00",
     location: event?.location || "",
     category: event?.category || "personal",
+    sourceCalendar: event?.sourceCalendar || null,
     isAllDay: event?.isAllDay || false,
     reminders: event?.reminders || [],
   });
@@ -33,6 +34,16 @@ export function AddEventModal({ event, onClose }: AddEventModalProps) {
     "1 hour before",
     "1 day before",
   ]);
+
+  // Fetch available calendar sources
+  const { data: calendarSources = [], isLoading: isLoadingSources } = useQuery({
+    queryKey: ["/api/calendar-sources"],
+    queryFn: async () => {
+      const response = await fetch("/api/calendar-sources");
+      if (!response.ok) throw new Error("Failed to fetch calendar sources");
+      return response.json();
+    },
+  });
 
   const createEventMutation = useMutation({
     mutationFn: async (data: InsertEvent) => {
@@ -106,6 +117,7 @@ export function AddEventModal({ event, onClose }: AddEventModalProps) {
       endTime: endDateTime,
       location: formData.location.trim() || null,
       category: formData.category,
+      sourceCalendar: formData.sourceCalendar,
       isAllDay: formData.isAllDay,
       reminders: formData.reminders,
     };
@@ -190,6 +202,31 @@ export function AddEventModal({ event, onClose }: AddEventModalProps) {
                 <option value="sports">Sports</option>
               </select>
             </div>
+          </div>
+
+          {/* Calendar Source Selector */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Add to Calendar
+            </label>
+            <select
+              value={formData.sourceCalendar || ""}
+              onChange={(e) => setFormData(prev => ({ ...prev, sourceCalendar: e.target.value || null }))}
+              className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              disabled={isLoadingSources || (isEditing && !!event?.sourceCalendar)}
+            >
+              <option value="">Local Calendar (Default)</option>
+              {calendarSources.map((source: CalendarSource) => (
+                <option key={source.id} value={source.name}>
+                  📅 {source.name}
+                </option>
+              ))}
+            </select>
+            {isEditing && event?.sourceCalendar && (
+              <p className="text-xs text-slate-500 mt-1">
+                Imported events cannot be moved to different calendars
+              </p>
+            )}
           </div>
 
           <div className="flex items-center space-x-2">
