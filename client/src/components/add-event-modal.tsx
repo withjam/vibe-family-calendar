@@ -15,12 +15,31 @@ export function AddEventModal({ event, onClose }: AddEventModalProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const getCurrentTime = () => {
+    const now = new Date();
+    // Round to next 15-minute interval
+    const minutes = now.getMinutes();
+    const roundedMinutes = Math.ceil(minutes / 15) * 15;
+    now.setMinutes(roundedMinutes, 0, 0);
+    return format(now, "HH:mm");
+  };
+
+  const getEndTime = () => {
+    const now = new Date();
+    // Round to next 15-minute interval, then add an hour
+    const minutes = now.getMinutes();
+    const roundedMinutes = Math.ceil(minutes / 15) * 15;
+    now.setMinutes(roundedMinutes, 0, 0);
+    now.setHours(now.getHours() + 1);
+    return format(now, "HH:mm");
+  };
+
   const [formData, setFormData] = useState({
     title: event?.title || "",
     description: event?.description || "",
     startDate: event ? format(new Date(event.startTime), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
-    startTime: event ? format(new Date(event.startTime), "HH:mm") : "09:00",
-    endTime: event?.endTime ? format(new Date(event.endTime), "HH:mm") : "10:00",
+    startTime: event ? format(new Date(event.startTime), "HH:mm") : getCurrentTime(),
+    endTime: event?.endTime ? format(new Date(event.endTime), "HH:mm") : getEndTime(),
     location: event?.location || "",
     category: event?.category || "personal",
     sourceCalendar: event?.sourceCalendar || null,

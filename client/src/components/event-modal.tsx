@@ -61,7 +61,7 @@ export function EventModal({
       className="fixed inset-0 bg-black bg-opacity-50 modal-backdrop flex items-center justify-center z-50"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl transform transition-all">
+      <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl transform transition-all max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-start mb-6">
           <h2 className="text-2xl font-bold text-slate-800">{event.title}</h2>
           <button
@@ -120,7 +120,9 @@ export function EventModal({
           {event.description && (
             <div className="pt-4 border-t border-slate-200">
               <h3 className="font-semibold text-slate-800 mb-2">Description</h3>
-              <p className="text-slate-600">{event.description}</p>
+              <div className="max-h-32 overflow-y-auto bg-slate-50 p-3 rounded-lg">
+                <p className="text-slate-600 whitespace-pre-wrap">{event.description}</p>
+              </div>
             </div>
           )}
 

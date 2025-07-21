@@ -96,9 +96,10 @@ export function CalendarHeader({
           </button>
           <button
             onClick={onAddEvent}
-            className="touch-target ripple-effect bg-green-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-green-700 transition-colors"
+            className="touch-target ripple-effect bg-green-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-green-700 transition-colors flex items-center space-x-2"
           >
-            Add Event
+            <span>+</span>
+            <span>Add Event</span>
           </button>
         </div>
       </div>
