@@ -99,8 +99,11 @@ export function CalendarGrid({
           const isCurrentMonth = isSameMonth(day, currentDate);
 
           const handleCellClick = (e: React.MouseEvent) => {
-            // Only handle day click if clicking on the cell itself, not on an event
-            if (e.target === e.currentTarget && onDayClick && isCurrentMonth) {
+            // Only handle day click if not clicking on an event
+            const isEventClick = (e.target as HTMLElement).closest('.event-item');
+            console.log('Cell clicked:', { day: format(day, 'yyyy-MM-dd'), isEventClick: !!isEventClick, isCurrentMonth, hasOnDayClick: !!onDayClick });
+            if (!isEventClick && onDayClick && isCurrentMonth) {
+              console.log('Calling onDayClick with:', day);
               onDayClick(day);
             }
           };
@@ -117,7 +120,7 @@ export function CalendarGrid({
                 days.indexOf(day) >= days.length - 7 ? "border-b-0" : ""
               }`}
             >
-              <div className="flex justify-end mb-2" onClick={handleCellClick}>
+              <div className="flex justify-end mb-2">
                 <span
                   className={`font-semibold ${
                     isCurrentMonth ? "text-slate-800" : "text-slate-400"
