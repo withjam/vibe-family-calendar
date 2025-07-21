@@ -75,6 +75,18 @@ Preferred communication style: Simple, everyday language.
 - ✅ Automatic reminder time calculations (15min, 30min, 1hr, 1day)
 - ✅ Time-until-reminder countdown in reminders panel
 
+### Google OAuth & Bidirectional Sync (January 21, 2025)
+- ✅ Google OAuth 2.0 authentication service integration
+- ✅ OAuth authorization flow with popup window
+- ✅ Secure refresh token storage for persistent access
+- ✅ Bidirectional sync: create, update, delete events in Google Calendar
+- ✅ OAuth-enabled calendar indicators in UI
+- ✅ Calendar source OAuth management buttons
+- ✅ Graceful fallback when OAuth operations fail
+- ✅ Event creation directly to external Google Calendar
+- ✅ Event updates synchronized across platforms
+- ✅ Event deletions synchronized across platforms
+
 ## Key Components
 
 ### Database Schema

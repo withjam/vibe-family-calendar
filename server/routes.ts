@@ -115,6 +115,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validatedData = updateEventSchema.parse(req.body);
+      
+      // Get original event to check if it has external sync
+      const originalEvent = await storage.getEvent(id);
+      if (!originalEvent) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      // If updating an OAuth-enabled calendar event, sync to Google Calendar
+      if (originalEvent.sourceCalendar && originalEvent.externalId) {
+        const calendarSource = await storage.getCalendarSourceByName(originalEvent.sourceCalendar);
+        
+        if (calendarSource?.hasOAuthCredentials && calendarSource.oauthRefreshToken && calendarSource.googleCalendarId) {
+          try {
+            googleOAuthService.setCredentials(calendarSource.oauthRefreshToken);
+            
+            await googleOAuthService.updateEvent(
+              calendarSource.googleCalendarId,
+              originalEvent.externalId,
+              {
+                title: validatedData.title || originalEvent.title,
+                description: validatedData.description || originalEvent.description,
+                location: validatedData.location || originalEvent.location,
+                startTime: validatedData.startTime?.toISOString() || originalEvent.startTime.toISOString(),
+                endTime: validatedData.endTime?.toISOString() || originalEvent.endTime?.toISOString(),
+                isAllDay: validatedData.isAllDay !== undefined ? validatedData.isAllDay : originalEvent.isAllDay,
+                reminders: validatedData.reminders || originalEvent.reminders
+              }
+            );
+          } catch (oauthError) {
+            console.error('Failed to update event in Google Calendar:', oauthError);
+            // Continue with local update even if Google sync fails
+          }
+        }
+      }
+
       const event = await storage.updateEvent(id, validatedData);
       
       if (!event) {
@@ -136,6 +171,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid event ID" });
+      }
+
+      // Get event to check if it has external sync
+      const event = await storage.getEvent(id);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      // If deleting an OAuth-enabled calendar event, delete from Google Calendar
+      if (event.sourceCalendar && event.externalId) {
+        const calendarSource = await storage.getCalendarSourceByName(event.sourceCalendar);
+        
+        if (calendarSource?.hasOAuthCredentials && calendarSource.oauthRefreshToken && calendarSource.googleCalendarId) {
+          try {
+            googleOAuthService.setCredentials(calendarSource.oauthRefreshToken);
+            await googleOAuthService.deleteEvent(calendarSource.googleCalendarId, event.externalId);
+          } catch (oauthError) {
+            console.error('Failed to delete event from Google Calendar:', oauthError);
+            // Continue with local deletion even if Google sync fails
+          }
+        }
       }
 
       const deleted = await storage.deleteEvent(id);

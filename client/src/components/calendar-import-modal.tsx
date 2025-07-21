@@ -369,6 +369,15 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
                         <h4 className="font-medium text-slate-800">{source.name}</h4>
                       </div>
                       <div className="flex space-x-1">
+                        {source.type === "google" && !source.hasOAuthCredentials && (
+                          <button
+                            onClick={() => enableOAuthMutation.mutate(source.id)}
+                            disabled={enableOAuthMutation.isPending}
+                            className="bg-green-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                          >
+                            {enableOAuthMutation.isPending ? "..." : "Enable OAuth"}
+                          </button>
+                        )}
                         <button
                           onClick={() => handleSync(source.id)}
                           disabled={isPending}
@@ -387,7 +396,12 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
                     </div>
                     <p className="text-xs text-slate-600 break-all mb-2">{source.url}</p>
                     <div className="flex justify-between items-center text-xs text-slate-500">
-                      <span className="capitalize">{source.type}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="capitalize">{source.type}</span>
+                        {source.hasOAuthCredentials && (
+                          <span className="text-green-600 font-medium">✓ OAuth Enabled</span>
+                        )}
+                      </div>
                       <span>
                         {source.lastSynced 
                           ? `Last synced: ${new Date(source.lastSynced).toLocaleString()}`
