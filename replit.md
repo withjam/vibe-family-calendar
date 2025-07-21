@@ -59,11 +59,21 @@ Preferred communication style: Simple, everyday language.
 - ✅ iCal.js library integration for RFC 5545 parsing
 - ✅ Calendar source management system
 - ✅ Support for iCal, Google Calendar, and WebCal formats
-- ✅ Automatic event categorization based on content
+- ✅ Automatic event categorization based in content
 - ✅ Calendar-specific color coding for events
 - ✅ Bulk sync functionality with error handling
 - ✅ Import modal with example calendar URLs
 - ✅ Event source tracking and cleanup
+- ✅ Calendar selector in Add Event modal
+- ✅ Calendar source metadata in event details
+
+### Notification & Reminder System (January 21, 2025)
+- ✅ Comprehensive reminder notifications while app is active
+- ✅ Upcoming reminders panel with 30-day lookahead
+- ✅ Real-time notification banners for triggered reminders
+- ✅ Dismissible notifications with event quick-access
+- ✅ Automatic reminder time calculations (15min, 30min, 1hr, 1day)
+- ✅ Time-until-reminder countdown in reminders panel
 
 ## Key Components
 

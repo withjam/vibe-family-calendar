@@ -7,6 +7,7 @@ interface CalendarHeaderProps {
   onAddEvent: () => void;
   onSearchEvents: () => void;
   onImportCalendars: () => void;
+  onShowReminders: () => void;
 }
 
 export function CalendarHeader({
@@ -16,6 +17,7 @@ export function CalendarHeader({
   onAddEvent,
   onSearchEvents,
   onImportCalendars,
+  onShowReminders,
 }: CalendarHeaderProps) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
@@ -55,6 +57,13 @@ export function CalendarHeader({
         </div>
 
         <div className="flex items-center space-x-3">
+          <button
+            onClick={onShowReminders}
+            className="touch-target ripple-effect bg-amber-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-amber-700 transition-colors flex items-center space-x-2"
+          >
+            <span>🔔</span>
+            <span>Reminders</span>
+          </button>
           <button
             onClick={onImportCalendars}
             className="touch-target ripple-effect bg-purple-600 text-white rounded-lg px-4 py-3 font-semibold hover:bg-purple-700 transition-colors flex items-center space-x-2"

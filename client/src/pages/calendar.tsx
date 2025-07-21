@@ -5,6 +5,8 @@ import { EventModal } from "@/components/event-modal";
 import { AddEventModal } from "@/components/add-event-modal";
 import { SearchModal } from "@/components/search-modal";
 import { CalendarImportModal } from "@/components/calendar-import-modal";
+import { RemindersPanel } from "@/components/reminders-panel";
+import { NotificationBanner } from "@/components/notification-banner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +18,7 @@ export default function Calendar() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showRemindersPanel, setShowRemindersPanel] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   const queryClient = useQueryClient();
@@ -139,6 +142,7 @@ export default function Calendar() {
         onAddEvent={handleAddEvent}
         onSearchEvents={() => setShowSearchModal(true)}
         onImportCalendars={() => setShowImportModal(true)}
+        onShowReminders={() => setShowRemindersPanel(true)}
       />
 
       <CalendarGrid
@@ -177,6 +181,16 @@ export default function Calendar() {
           onClose={() => setShowImportModal(false)}
         />
       )}
+
+      {showRemindersPanel && (
+        <RemindersPanel
+          isOpen={showRemindersPanel}
+          onClose={() => setShowRemindersPanel(false)}
+          onEventSelect={handleEventSelect}
+        />
+      )}
+
+      <NotificationBanner onEventSelect={handleEventSelect} />
     </div>
   );
 }
