@@ -54,6 +54,8 @@ export function AddEventModal({ event, selectedDate, onClose }: AddEventModalPro
   });
 
   const [reminderOptions] = useState([
+    "1 minute before",
+    "5 minutes before", 
     "15 minutes before",
     "30 minutes before",
     "1 hour before",
