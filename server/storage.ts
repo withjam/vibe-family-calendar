@@ -1,4 +1,6 @@
 import { users, events, calendarSources, type User, type InsertUser, type Event, type InsertEvent, type UpdateEvent, type CalendarSource, type InsertCalendarSource, type UpdateCalendarSource } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, gte, lte, or, ilike } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -25,241 +27,136 @@ export interface IStorage {
   deleteCalendarSource(id: number): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private events: Map<number, Event>;
-  private calendarSources: Map<number, CalendarSource>;
-  private currentUserId: number;
-  private currentEventId: number;
-  private currentCalendarSourceId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.events = new Map();
-    this.calendarSources = new Map();
-    this.currentUserId = 1;
-    this.currentEventId = 1;
-    this.currentCalendarSourceId = 1;
-    
-    // Add some initial events for demonstration
-    this.initializeEvents();
-  }
-
-  private initializeEvents() {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
-    const sampleEvents: InsertEvent[] = [
-      {
-        title: "Team Meeting",
-        description: "Weekly team sync and project updates",
-        startTime: new Date(currentYear, currentMonth, 1, 9, 0),
-        endTime: new Date(currentYear, currentMonth, 1, 10, 0),
-        location: "Conference Room A",
-        category: "work",
-        isAllDay: false,
-        reminders: ["30 minutes before"],
-      },
-      {
-        title: "Doctor Appointment",
-        description: "Annual checkup with Dr. Smith",
-        startTime: new Date(currentYear, currentMonth, 2, 14, 30),
-        endTime: new Date(currentYear, currentMonth, 2, 15, 30),
-        location: "Downtown Medical Center",
-        category: "health",
-        isAllDay: false,
-        reminders: ["1 hour before"],
-      },
-      {
-        title: "Sarah's Soccer Practice",
-        description: "Weekly soccer practice for Sarah's team. Remember to bring water bottle, cleats, and shin guards.",
-        startTime: new Date(currentYear, currentMonth, 2, 16, 0),
-        endTime: new Date(currentYear, currentMonth, 2, 17, 30),
-        location: "Riverside Park Soccer Fields",
-        category: "sports",
-        isAllDay: false,
-        reminders: ["30 minutes before"],
-      },
-      {
-        title: "Book Club",
-        description: "Monthly book discussion meeting",
-        startTime: new Date(currentYear, currentMonth, 4, 19, 0),
-        endTime: new Date(currentYear, currentMonth, 4, 21, 0),
-        location: "Local Library",
-        category: "personal",
-        isAllDay: false,
-        reminders: [],
-      },
-      {
-        title: "Family BBQ",
-        description: "Weekend family gathering with BBQ",
-        startTime: new Date(currentYear, currentMonth, 11, 12, 0),
-        endTime: new Date(currentYear, currentMonth, 11, 16, 0),
-        location: "Backyard",
-        category: "family",
-        isAllDay: false,
-        reminders: ["1 day before"],
-      },
-    ];
-
-    sampleEvents.forEach(event => {
-      this.createEvent(event);
-    });
-  }
-
+export class DatabaseStorage implements IStorage {
+  // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
+  // Event methods
   async getAllEvents(): Promise<Event[]> {
-    return Array.from(this.events.values()).sort((a, b) => 
-      new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-    );
+    return await db.select().from(events);
   }
 
   async getEvent(id: number): Promise<Event | undefined> {
-    return this.events.get(id);
+    const [event] = await db.select().from(events).where(eq(events.id, id));
+    return event || undefined;
   }
 
   async getEventsByDateRange(startDate: Date, endDate: Date): Promise<Event[]> {
-    const events = Array.from(this.events.values());
-    return events.filter(event => {
-      const eventDate = new Date(event.startTime);
-      return eventDate >= startDate && eventDate <= endDate;
-    }).sort((a, b) => 
-      new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-    );
+    return await db
+      .select()
+      .from(events)
+      .where(
+        and(
+          lte(events.startTime, endDate),
+          or(
+            gte(events.endTime, startDate),
+            gte(events.startTime, startDate) // For events without end time
+          )
+        )
+      );
   }
 
   async createEvent(insertEvent: InsertEvent): Promise<Event> {
-    const id = this.currentEventId++;
-    const event: Event = { 
-      ...insertEvent, 
-      id,
-      description: insertEvent.description || null,
-      location: insertEvent.location || null,
-      endTime: insertEvent.endTime || null,
-      category: insertEvent.category || "personal",
-      isAllDay: insertEvent.isAllDay || false,
-      reminders: insertEvent.reminders || null,
-      sourceCalendar: insertEvent.sourceCalendar || null,
-      externalId: insertEvent.externalId || null
-    };
-    this.events.set(id, event);
+    const [event] = await db
+      .insert(events)
+      .values(insertEvent)
+      .returning();
     return event;
   }
 
   async updateEvent(id: number, updateEvent: UpdateEvent): Promise<Event | undefined> {
-    const existingEvent = this.events.get(id);
-    if (!existingEvent) {
-      return undefined;
-    }
-    
-    const updatedEvent: Event = { ...existingEvent, ...updateEvent };
-    this.events.set(id, updatedEvent);
-    return updatedEvent;
+    const [event] = await db
+      .update(events)
+      .set(updateEvent)
+      .where(eq(events.id, id))
+      .returning();
+    return event || undefined;
   }
 
   async deleteEvent(id: number): Promise<boolean> {
-    return this.events.delete(id);
+    const result = await db.delete(events).where(eq(events.id, id));
+    return result.rowCount > 0;
   }
 
   async searchEvents(query: string): Promise<Event[]> {
-    const lowerQuery = query.toLowerCase();
-    const events = Array.from(this.events.values());
-    
-    return events.filter(event => 
-      event.title.toLowerCase().includes(lowerQuery) ||
-      (event.description && event.description.toLowerCase().includes(lowerQuery)) ||
-      (event.location && event.location.toLowerCase().includes(lowerQuery))
-    ).sort((a, b) => 
-      new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-    );
+    return await db
+      .select()
+      .from(events)
+      .where(
+        or(
+          ilike(events.title, `%${query}%`),
+          ilike(events.description, `%${query}%`)
+        )
+      );
   }
 
-  async bulkCreateEvents(events: InsertEvent[]): Promise<Event[]> {
-    const createdEvents: Event[] = [];
-    for (const insertEvent of events) {
-      const event = await this.createEvent(insertEvent);
-      createdEvents.push(event);
-    }
+  async bulkCreateEvents(insertEvents: InsertEvent[]): Promise<Event[]> {
+    if (insertEvents.length === 0) return [];
+    
+    const createdEvents = await db
+      .insert(events)
+      .values(insertEvents)
+      .returning();
     return createdEvents;
   }
 
   async deleteEventsBySource(sourceCalendar: string): Promise<boolean> {
-    const eventsToDelete = Array.from(this.events.entries())
-      .filter(([_, event]) => event.sourceCalendar === sourceCalendar)
-      .map(([id, _]) => id);
-    
-    let deletedAny = false;
-    for (const id of eventsToDelete) {
-      if (this.events.delete(id)) {
-        deletedAny = true;
-      }
-    }
-    return deletedAny;
+    const result = await db.delete(events).where(eq(events.sourceCalendar, sourceCalendar));
+    return result.rowCount > 0;
   }
 
   // Calendar source methods
   async getAllCalendarSources(): Promise<CalendarSource[]> {
-    return Array.from(this.calendarSources.values()).sort((a, b) => a.name.localeCompare(b.name));
+    return await db.select().from(calendarSources);
   }
 
   async getCalendarSource(id: number): Promise<CalendarSource | undefined> {
-    return this.calendarSources.get(id);
+    const [source] = await db.select().from(calendarSources).where(eq(calendarSources.id, id));
+    return source || undefined;
   }
 
   async getCalendarSourceByName(name: string): Promise<CalendarSource | undefined> {
-    for (const source of this.calendarSources.values()) {
-      if (source.name === name) {
-        return source;
-      }
-    }
-    return undefined;
+    const [source] = await db.select().from(calendarSources).where(eq(calendarSources.name, name));
+    return source || undefined;
   }
 
   async createCalendarSource(insertSource: InsertCalendarSource): Promise<CalendarSource> {
-    const id = this.currentCalendarSourceId++;
-    const source: CalendarSource = {
-      ...insertSource,
-      id,
-      color: insertSource.color || "#3b82f6",
-      isActive: insertSource.isActive ?? true,
-      syncInterval: insertSource.syncInterval || 3600,
-      lastSynced: null,
-    };
-    this.calendarSources.set(id, source);
+    const [source] = await db
+      .insert(calendarSources)
+      .values(insertSource)
+      .returning();
     return source;
   }
 
   async updateCalendarSource(id: number, updateSource: UpdateCalendarSource): Promise<CalendarSource | undefined> {
-    const existingSource = this.calendarSources.get(id);
-    if (!existingSource) {
-      return undefined;
-    }
-    
-    const updatedSource: CalendarSource = { ...existingSource, ...updateSource };
-    this.calendarSources.set(id, updatedSource);
-    return updatedSource;
+    const [source] = await db
+      .update(calendarSources)
+      .set(updateSource)
+      .where(eq(calendarSources.id, id))
+      .returning();
+    return source || undefined;
   }
 
   async deleteCalendarSource(id: number): Promise<boolean> {
-    return this.calendarSources.delete(id);
+    const result = await db.delete(calendarSources).where(eq(calendarSources.id, id));
+    return result.rowCount > 0;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
