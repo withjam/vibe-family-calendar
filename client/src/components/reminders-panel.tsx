@@ -49,7 +49,11 @@ export function RemindersPanel({ isOpen, onClose, onEventSelect }: RemindersPane
           let reminderTime: Date | null = null;
 
           // Parse reminder text to calculate time
-          if (reminderText.includes("15 minutes")) {
+          if (reminderText.includes("1 minute")) {
+            reminderTime = addMinutes(eventStart, -1);
+          } else if (reminderText.includes("5 minutes")) {
+            reminderTime = addMinutes(eventStart, -5);
+          } else if (reminderText.includes("15 minutes")) {
             reminderTime = addMinutes(eventStart, -15);
           } else if (reminderText.includes("30 minutes")) {
             reminderTime = addMinutes(eventStart, -30);
