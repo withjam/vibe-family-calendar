@@ -26,16 +26,25 @@ export default function Calendar() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Get start and end of current month for API query
-  const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  // Get the full calendar grid range (including prev/next month days shown)
+  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  
+  // Calculate the full calendar grid range to include all visible days
+  const firstCalendarDay = new Date(firstDayOfMonth);
+  firstCalendarDay.setDate(firstCalendarDay.getDate() - firstCalendarDay.getDay()); // Go to Sunday of first week
+  
+  const lastCalendarDay = new Date(lastDayOfMonth);
+  const daysFromSunday = (lastCalendarDay.getDay() + 1) % 7;
+  const daysToAdd = daysFromSunday === 0 ? 0 : 7 - daysFromSunday;
+  lastCalendarDay.setDate(lastCalendarDay.getDate() + daysToAdd); // Go to Saturday of last week
 
   const { data: events = [], isLoading } = useQuery({
-    queryKey: ["/api/events/range", startOfMonth.toISOString(), endOfMonth.toISOString()],
+    queryKey: ["/api/events/range", firstCalendarDay.toISOString(), lastCalendarDay.toISOString()],
     queryFn: async () => {
       const params = new URLSearchParams({
-        startDate: startOfMonth.toISOString(),
-        endDate: endOfMonth.toISOString(),
+        startDate: firstCalendarDay.toISOString(),
+        endDate: lastCalendarDay.toISOString(),
       });
       const response = await fetch(`/api/events/range?${params}`);
       if (!response.ok) throw new Error("Failed to fetch events");

@@ -124,6 +124,13 @@ Preferred communication style: Simple, everyday language.
 - ✅ Added missing parseReminderToMinutes method for handling reminder sync
 - ✅ Complete bidirectional sync working for create, update, and delete operations
 
+### Enhanced Calendar Grid with Extended Month View (January 26, 2025)
+- ✅ Extended event query to fetch events for full calendar grid (including previous/next month days)
+- ✅ Events from other months now display on their respective days in the calendar grid
+- ✅ Visual distinction for other-month events: lighter colors and reduced opacity
+- ✅ Clickable functionality maintained for all events regardless of month
+- ✅ Calendar grid now shows complete event context for improved planning
+
 ## Key Components
 
 ### Database Schema

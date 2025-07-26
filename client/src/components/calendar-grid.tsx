@@ -43,35 +43,36 @@ export function CalendarGrid({
     return format(new Date(dateTime), "h:mm a");
   };
 
-  const getEventColor = (event: Event) => {
+  const getEventColor = (event: Event, isCurrentMonth: boolean) => {
     // If event has a source calendar, use its color
     if (event.sourceCalendar) {
       const source = calendarSources.find((s: CalendarSource) => s.name === event.sourceCalendar);
       if (source?.color) {
         // Convert hex color to CSS classes - simplified approach
-        return `border-l-4 text-slate-700`;
+        const baseClasses = `border-l-4 ${isCurrentMonth ? 'text-slate-700' : 'text-slate-500'}`;
+        return baseClasses;
       }
     }
 
     // Fallback to category-based colors for manually created events
     const colors = {
-      work: "bg-blue-100 text-blue-800 border-blue-300",
-      personal: "bg-purple-100 text-purple-800 border-purple-300",
-      family: "bg-green-100 text-green-800 border-green-300",
-      health: "bg-red-100 text-red-800 border-red-300",
-      sports: "bg-amber-100 text-amber-800 border-amber-300",
-      default: "bg-gray-100 text-gray-800 border-gray-300",
+      work: isCurrentMonth ? "bg-blue-100 text-blue-800 border-blue-300" : "bg-blue-50 text-blue-600 border-blue-200",
+      personal: isCurrentMonth ? "bg-purple-100 text-purple-800 border-purple-300" : "bg-purple-50 text-purple-600 border-purple-200",
+      family: isCurrentMonth ? "bg-green-100 text-green-800 border-green-300" : "bg-green-50 text-green-600 border-green-200",
+      health: isCurrentMonth ? "bg-red-100 text-red-800 border-red-300" : "bg-red-50 text-red-600 border-red-200",
+      sports: isCurrentMonth ? "bg-amber-100 text-amber-800 border-amber-300" : "bg-amber-50 text-amber-600 border-amber-200",
+      default: isCurrentMonth ? "bg-gray-100 text-gray-800 border-gray-300" : "bg-gray-50 text-gray-600 border-gray-200",
     };
     return colors[event.category as keyof typeof colors] || colors.default;
   };
 
-  const getEventStyle = (event: Event) => {
+  const getEventStyle = (event: Event, isCurrentMonth: boolean) => {
     if (event.sourceCalendar) {
       const source = calendarSources.find((s: CalendarSource) => s.name === event.sourceCalendar);
       if (source?.color) {
         return {
           borderLeftColor: source.color,
-          backgroundColor: source.color + "20", // Add transparency
+          backgroundColor: source.color + (isCurrentMonth ? "20" : "10"), // More transparent for other months
         };
       }
     }
@@ -102,7 +103,7 @@ export function CalendarGrid({
           const handleCellClick = (e: React.MouseEvent) => {
             // Only handle day click if not clicking on an event
             const isEventClick = (e.target as HTMLElement).closest('.event-item');
-            if (!isEventClick && onDayClick && isCurrentMonth) {
+            if (!isEventClick && onDayClick) {
               onDayClick(day);
             }
           };
@@ -143,10 +144,10 @@ export function CalendarGrid({
                       e.stopPropagation(); // Prevent day click when clicking on event
                       onEventSelect(event.id);
                     }}
-                    className={`event-item text-xs px-2 py-1 rounded font-medium flex justify-between cursor-pointer ${getEventColor(event)} ${
+                    className={`event-item text-xs px-2 py-1 rounded font-medium flex justify-between cursor-pointer ${getEventColor(event, isCurrentMonth)} ${
                       selectedEventId === event.id ? "selected" : ""
-                    }`}
-                    style={getEventStyle(event)}
+                    } ${!isCurrentMonth ? "opacity-75" : ""}`}
+                    style={getEventStyle(event, isCurrentMonth)}
                   >
                     <span className="truncate mr-1">{event.title}</span>
                     <span className="flex-shrink-0">
