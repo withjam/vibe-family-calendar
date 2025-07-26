@@ -19,6 +19,7 @@ interface UseReminderWorkerReturn {
   status: WorkerStatus;
   triggeredReminders: TriggeredReminder[];
   clearReminders: () => void;
+  dismissReminder: (reminderId: string) => void;
   restartWorker: () => void;
 }
 
@@ -172,6 +173,16 @@ export function useReminderWorker(events: Event[]): UseReminderWorkerReturn {
     setTriggeredReminders([]);
   }, []);
 
+  const dismissReminder = useCallback((reminderId: string) => {
+    // Tell the worker to mark this reminder as permanently dismissed
+    if (workerRef.current) {
+      workerRef.current.postMessage({
+        type: 'DISMISS_REMINDER',
+        payload: { reminderId }
+      });
+    }
+  }, []);
+
   const restartWorker = useCallback(() => {
     if (workerRef.current) {
       workerRef.current.postMessage({ type: 'RESTART_WORKER' });
@@ -182,6 +193,7 @@ export function useReminderWorker(events: Event[]): UseReminderWorkerReturn {
     status,
     triggeredReminders,
     clearReminders,
+    dismissReminder,
     restartWorker,
   };
 }

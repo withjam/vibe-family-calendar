@@ -157,6 +157,11 @@ class ReminderWorker {
     this.scheduleNextCheck();
   }
 
+  dismissReminder(reminderId) {
+    // Mark this specific reminder as permanently dismissed
+    this.checkedReminders.add(reminderId);
+  }
+
   restart() {
     // Reset state and restart
     this.retryCount = 0;
@@ -200,6 +205,10 @@ self.onmessage = function(e) {
       
     case 'CLEAR_CHECKED_REMINDERS':
       worker.checkedReminders.clear();
+      break;
+      
+    case 'DISMISS_REMINDER':
+      worker.dismissReminder(payload.reminderId);
       break;
       
     default:

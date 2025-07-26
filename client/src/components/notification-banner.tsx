@@ -37,7 +37,7 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
   });
 
   // Use web worker for reminder processing
-  const { triggeredReminders, clearReminders, status } = useReminderWorker(events);
+  const { triggeredReminders, clearReminders, dismissReminder, status } = useReminderWorker(events);
   
   // Handle new reminders from the web worker
   useEffect(() => {
@@ -86,6 +86,9 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
       newMap.delete(notificationId);
       return newMap;
     });
+    
+    // Tell the worker to mark this reminder as permanently dismissed
+    dismissReminder(notificationId);
   };
 
   const handleEventClick = (eventId: number, notificationId: string) => {
