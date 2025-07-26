@@ -48,15 +48,17 @@ export function RemindersPanel({ isOpen, onClose, onEventSelect }: RemindersPane
         event.reminders.forEach((reminderText: string) => {
           let reminderTime: Date | null = null;
 
-          // Parse reminder text to calculate time
-          if (reminderText.includes("1 minute")) {
-            reminderTime = addMinutes(eventStart, -1);
-          } else if (reminderText.includes("5 minutes")) {
-            reminderTime = addMinutes(eventStart, -5);
-          } else if (reminderText.includes("15 minutes")) {
+          // Parse reminder text to calculate time - check most specific patterns first
+          if (reminderText.includes("15 minutes")) {
             reminderTime = addMinutes(eventStart, -15);
           } else if (reminderText.includes("30 minutes")) {
             reminderTime = addMinutes(eventStart, -30);
+          } else if (reminderText.includes("5 minutes")) {
+            reminderTime = addMinutes(eventStart, -5);
+          } else if (reminderText.includes("2 minutes")) {
+            reminderTime = addMinutes(eventStart, -2);
+          } else if (reminderText.includes("1 minute")) {
+            reminderTime = addMinutes(eventStart, -1);
           } else if (reminderText.includes("1 hour")) {
             reminderTime = addHours(eventStart, -1);
           } else if (reminderText.includes("1 day")) {

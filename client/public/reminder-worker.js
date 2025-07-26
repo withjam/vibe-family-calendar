@@ -69,15 +69,17 @@ class ReminderWorker {
       event.reminders.forEach((reminderText) => {
         let reminderTime = null;
 
-        // Parse reminder text to calculate time
-        if (reminderText.includes("1 minute")) {
-          reminderTime = this.addMinutes(eventStart, -1);
-        } else if (reminderText.includes("5 minutes")) {
-          reminderTime = this.addMinutes(eventStart, -5);
-        } else if (reminderText.includes("15 minutes")) {
+        // Parse reminder text to calculate time - check most specific patterns first
+        if (reminderText.includes("15 minutes")) {
           reminderTime = this.addMinutes(eventStart, -15);
         } else if (reminderText.includes("30 minutes")) {
           reminderTime = this.addMinutes(eventStart, -30);
+        } else if (reminderText.includes("5 minutes")) {
+          reminderTime = this.addMinutes(eventStart, -5);
+        } else if (reminderText.includes("2 minutes")) {
+          reminderTime = this.addMinutes(eventStart, -2);
+        } else if (reminderText.includes("1 minute")) {
+          reminderTime = this.addMinutes(eventStart, -1);
         } else if (reminderText.includes("1 hour")) {
           reminderTime = this.addHours(eventStart, -1);
         } else if (reminderText.includes("1 day")) {
@@ -126,15 +128,17 @@ class ReminderWorker {
         event.reminders.forEach((reminderText) => {
           let reminderTime = null;
 
-          // Parse reminder text to calculate time
-          if (reminderText.includes("1 minute")) {
-            reminderTime = this.addMinutes(eventStart, -1);
-          } else if (reminderText.includes("5 minutes")) {
-            reminderTime = this.addMinutes(eventStart, -5);
-          } else if (reminderText.includes("15 minutes")) {
+          // Parse reminder text to calculate time - check most specific patterns first
+          if (reminderText.includes("15 minutes")) {
             reminderTime = this.addMinutes(eventStart, -15);
           } else if (reminderText.includes("30 minutes")) {
             reminderTime = this.addMinutes(eventStart, -30);
+          } else if (reminderText.includes("5 minutes")) {
+            reminderTime = this.addMinutes(eventStart, -5);
+          } else if (reminderText.includes("2 minutes")) {
+            reminderTime = this.addMinutes(eventStart, -2);
+          } else if (reminderText.includes("1 minute")) {
+            reminderTime = this.addMinutes(eventStart, -1);
           } else if (reminderText.includes("1 hour")) {
             reminderTime = this.addHours(eventStart, -1);
           } else if (reminderText.includes("1 day")) {
