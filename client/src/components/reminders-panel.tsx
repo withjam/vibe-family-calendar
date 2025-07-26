@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { format, isAfter, isBefore } from "date-fns";
+import { format, isAfter, isBefore, addDays } from "date-fns";
 import { parseReminderOffsets, calculateReminderTime } from "@/lib/reminder-utils";
 import type { Event } from "@shared/schema";
 
