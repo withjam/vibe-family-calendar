@@ -130,6 +130,16 @@ Preferred communication style: Simple, everyday language.
 - ✅ Visual distinction for other-month events: lighter colors and reduced opacity
 - ✅ Clickable functionality maintained for all events regardless of month
 - ✅ Calendar grid now shows complete event context for improved planning
+- ✅ Fixed date range calculation mismatch between parent Calendar and CalendarGrid components
+- ✅ Imported calendar events now properly display in extended month view
+
+### Smart Notification System Improvements (January 26, 2025)
+- ✅ Fixed over-notification issue: eliminated past reminder triggering on app load
+- ✅ Implemented 2-minute notification window instead of 15-minute (more precise timing)
+- ✅ Added dismissed reminders tracking to prevent repeated notifications
+- ✅ Smart initialization: past reminders are automatically marked as processed
+- ✅ Preserved upcoming reminders panel accuracy and functionality
+- ✅ Enhanced worker state management for better notification control
 
 ## Key Components
 

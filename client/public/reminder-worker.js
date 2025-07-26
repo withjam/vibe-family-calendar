@@ -3,6 +3,7 @@ class ReminderWorker {
   constructor() {
     this.events = [];
     this.checkedReminders = new Set();
+    this.dismissedReminders = new Set(); // Track permanently dismissed reminders
     this.retryCount = 0;
     this.maxRetries = 5;
     this.baseRetryDelay = 1000; // Start with 1 second
@@ -44,9 +45,58 @@ class ReminderWorker {
 
   updateEvents(newEvents) {
     console.log(`[Worker] Received ${newEvents.length} events for reminder processing`);
+    
+    // If this is the first time receiving events, mark all past reminders as already processed
+    // to prevent notification spam on app load
+    if (this.events.length === 0) {
+      this.initializePastReminders(newEvents);
+    }
+    
     this.events = newEvents;
     // Reset retry count on successful data update
     this.retryCount = 0;
+  }
+
+  initializePastReminders(events) {
+    const now = new Date();
+    console.log(`[Worker] Initializing past reminders to prevent notification spam`);
+    
+    events.forEach((event) => {
+      if (!event.reminders || event.reminders.length === 0) return;
+
+      const eventStart = new Date(event.startTime);
+      
+      event.reminders.forEach((reminderText) => {
+        let reminderTime = null;
+
+        // Parse reminder text to calculate time
+        if (reminderText.includes("1 minute")) {
+          reminderTime = this.addMinutes(eventStart, -1);
+        } else if (reminderText.includes("5 minutes")) {
+          reminderTime = this.addMinutes(eventStart, -5);
+        } else if (reminderText.includes("15 minutes")) {
+          reminderTime = this.addMinutes(eventStart, -15);
+        } else if (reminderText.includes("30 minutes")) {
+          reminderTime = this.addMinutes(eventStart, -30);
+        } else if (reminderText.includes("1 hour")) {
+          reminderTime = this.addHours(eventStart, -1);
+        } else if (reminderText.includes("1 day")) {
+          reminderTime = this.addDays(eventStart, -1);
+        }
+
+        if (reminderTime) {
+          const reminderId = `${event.id}-${reminderText}-${reminderTime.getTime()}`;
+          
+          // If reminder time has passed by more than 2 minutes, mark it as already checked
+          const timeDiff = now.getTime() - reminderTime.getTime();
+          if (timeDiff > 120000) { // More than 2 minutes ago
+            this.checkedReminders.add(reminderId);
+          }
+        }
+      });
+    });
+    
+    console.log(`[Worker] Marked ${this.checkedReminders.size} past reminders as already processed`);
   }
 
   addMinutes(date, minutes) {
@@ -94,11 +144,12 @@ class ReminderWorker {
           if (reminderTime) {
             const reminderId = `${event.id}-${reminderText}-${reminderTime.getTime()}`;
             
-            // Check if reminder should trigger - extended window for missed notifications
+            // Check if reminder should trigger - only current reminders, no past ones
             const timeDiff = now.getTime() - reminderTime.getTime();
-            const shouldTrigger = timeDiff >= 0 && timeDiff <= 900000; // Within 15 minutes
+            const shouldTrigger = timeDiff >= 0 && timeDiff <= 120000; // Within 2 minutes only
             
-            if (shouldTrigger && !this.checkedReminders.has(reminderId)) {
+            // Also check if this reminder hasn't been permanently dismissed and isn't already triggered
+            if (shouldTrigger && !this.checkedReminders.has(reminderId) && !this.dismissedReminders.has(reminderId)) {
               triggeredReminders.push({
                 event,
                 reminderText,
@@ -106,6 +157,7 @@ class ReminderWorker {
                 id: reminderId,
               });
               
+              // Mark as triggered to prevent repeated notifications
               this.checkedReminders.add(reminderId);
             }
           }
@@ -159,6 +211,7 @@ class ReminderWorker {
 
   dismissReminder(reminderId) {
     // Mark this specific reminder as permanently dismissed
+    this.dismissedReminders.add(reminderId);
     this.checkedReminders.add(reminderId);
   }
 
@@ -166,6 +219,7 @@ class ReminderWorker {
     // Reset state and restart
     this.retryCount = 0;
     this.checkedReminders.clear();
+    // Keep dismissed reminders to prevent re-triggering permanently dismissed notifications
     
     self.postMessage({
       type: 'WORKER_RESTARTED',
