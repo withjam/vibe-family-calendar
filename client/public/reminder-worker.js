@@ -66,7 +66,7 @@ class ReminderWorker {
       const now = new Date();
       const triggeredReminders = [];
       
-      console.log(`[Worker] Processing ${this.events.length} events at ${now.toISOString()}`);
+
       
       this.events.forEach((event) => {
         if (!event.reminders || event.reminders.length === 0) return;
@@ -98,10 +98,7 @@ class ReminderWorker {
             const timeDiff = now.getTime() - reminderTime.getTime();
             const shouldTrigger = timeDiff >= 0 && timeDiff <= 900000; // Within 15 minutes
             
-            console.log(`[Worker] Event: ${event.title}, Reminder: ${reminderText}, Time diff: ${timeDiff}ms, Should trigger: ${shouldTrigger}, Already checked: ${this.checkedReminders.has(reminderId)}`);
-            
             if (shouldTrigger && !this.checkedReminders.has(reminderId)) {
-              console.log(`[Worker] TRIGGERING REMINDER for ${event.title}: ${reminderText}`);
               triggeredReminders.push({
                 event,
                 reminderText,
@@ -117,7 +114,6 @@ class ReminderWorker {
 
       // Send triggered reminders to main thread
       if (triggeredReminders.length > 0) {
-        console.log(`[Worker] Sending ${triggeredReminders.length} triggered reminders to main thread`);
         self.postMessage({
           type: 'REMINDERS_TRIGGERED',
           payload: triggeredReminders

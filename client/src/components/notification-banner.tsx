@@ -42,35 +42,42 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
   // Handle new reminders from the web worker
   useEffect(() => {
     if (triggeredReminders.length > 0) {
-      setActiveNotifications(prev => [...prev, ...triggeredReminders]);
+      // Filter out reminders that are already active to prevent duplicates
+      const newReminders = triggeredReminders.filter(reminder => 
+        !activeNotifications.some(active => active.id === reminder.id)
+      );
       
-      // Set up progress bar and auto-dismiss for each new notification
-      triggeredReminders.forEach(notification => {
-        // Initialize progress bar at 100%
-        setProgressBars(prev => new Map(prev.set(notification.id, 100)));
+      if (newReminders.length > 0) {
+        setActiveNotifications(prev => [...prev, ...newReminders]);
         
-        // Update progress bar every 600ms (100 times in 60 seconds)
-        let progress = 100;
-        const progressInterval = setInterval(() => {
-          progress -= 100/100; // Decrease by 1% every 600ms
-          setProgressBars(prev => new Map(prev.set(notification.id, Math.max(0, progress))));
+        // Set up progress bar and auto-dismiss for each new notification
+        newReminders.forEach(notification => {
+          // Initialize progress bar at 100%
+          setProgressBars(prev => new Map(prev.set(notification.id, 100)));
           
-          if (progress <= 0) {
+          // Update progress bar every 600ms (100 times in 60 seconds)
+          let progress = 100;
+          const progressInterval = setInterval(() => {
+            progress -= 100/100; // Decrease by 1% every 600ms
+            setProgressBars(prev => new Map(prev.set(notification.id, Math.max(0, progress))));
+            
+            if (progress <= 0) {
+              clearInterval(progressInterval);
+            }
+          }, 600);
+          
+          // Auto-dismiss after 60 seconds
+          setTimeout(() => {
+            dismissNotification(notification.id);
             clearInterval(progressInterval);
-          }
-        }, 600);
-        
-        // Auto-dismiss after 60 seconds
-        setTimeout(() => {
-          dismissNotification(notification.id);
-          clearInterval(progressInterval);
-        }, 60000);
-      });
+          }, 60000);
+        });
+      }
       
       // Clear the triggered reminders from the worker
       clearReminders();
     }
-  }, [triggeredReminders, clearReminders]);
+  }, [triggeredReminders, clearReminders, activeNotifications]);
 
   const dismissNotification = (notificationId: string) => {
     setActiveNotifications(prev => prev.filter(n => n.id !== notificationId));
