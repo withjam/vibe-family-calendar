@@ -23,16 +23,6 @@ export function CalendarGrid({
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
 
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-  
-  // Debug logging to check if August 2nd is included in the calendar grid
-  console.log('Calendar grid days range:', calendarStart.toISOString(), 'to', calendarEnd.toISOString());
-  console.log('Total days in grid:', days.length);
-  const augustDays = days.filter(d => d.getMonth() === 7 && d.getDate() === 2); // August is month 7
-  if (augustDays.length > 0) {
-    console.log('August 2nd is in the calendar grid:', augustDays[0].toISOString());
-  } else {
-    console.log('August 2nd is NOT in the calendar grid');
-  }
 
   const { data: calendarSources = [] } = useQuery({
     queryKey: ["/api/calendar-sources"],
@@ -44,17 +34,9 @@ export function CalendarGrid({
   });
 
   const getEventsForDay = (day: Date) => {
-    const dayEvents = events
+    return events
       .filter(event => isSameDay(new Date(event.startTime), day))
       .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-    
-    // Debug logging for August 2nd specifically
-    if (day.getMonth() === 7 && day.getDate() === 2) {
-      console.log('Events for August 2nd:', dayEvents);
-      console.log('All events passed to component:', events.length);
-    }
-    
-    return dayEvents;
   };
 
   const formatTime = (dateTime: string | Date) => {

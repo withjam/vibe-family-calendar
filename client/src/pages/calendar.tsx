@@ -26,18 +26,20 @@ export default function Calendar() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Get the full calendar grid range (including prev/next month days shown)
-  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+  // Use the same date calculation logic as CalendarGrid to ensure consistency
+  const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
   
-  // Calculate the full calendar grid range to include all visible days
-  const firstCalendarDay = new Date(firstDayOfMonth);
-  firstCalendarDay.setDate(firstCalendarDay.getDate() - firstCalendarDay.getDay()); // Go to Sunday of first week
+  // Calculate the full calendar grid range using the same logic as CalendarGrid
+  const firstCalendarDay = new Date(monthStart);
+  firstCalendarDay.setDate(firstCalendarDay.getDate() - monthStart.getDay()); // Go to Sunday of first week
   
-  const lastCalendarDay = new Date(lastDayOfMonth);
-  const daysFromSunday = (lastCalendarDay.getDay() + 1) % 7;
-  const daysToAdd = daysFromSunday === 0 ? 0 : 7 - daysFromSunday;
-  lastCalendarDay.setDate(lastCalendarDay.getDate() + daysToAdd); // Go to Saturday of last week
+  const lastCalendarDay = new Date(monthEnd);
+  const daysToAdd = 6 - monthEnd.getDay(); // Go to Saturday of last week
+  lastCalendarDay.setDate(lastCalendarDay.getDate() + daysToAdd);
+  
+  // Ensure we include the full last day by setting time to end of day
+  lastCalendarDay.setHours(23, 59, 59, 999);
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["/api/events/range", firstCalendarDay.toISOString(), lastCalendarDay.toISOString()],
@@ -46,13 +48,9 @@ export default function Calendar() {
         startDate: firstCalendarDay.toISOString(),
         endDate: lastCalendarDay.toISOString(),
       });
-      console.log('Calendar fetching events from:', firstCalendarDay.toISOString(), 'to:', lastCalendarDay.toISOString());
       const response = await fetch(`/api/events/range?${params}`);
       if (!response.ok) throw new Error("Failed to fetch events");
-      const data = await response.json();
-      console.log('Calendar received events:', data.length, 'events');
-      console.log('Events in August:', data.filter(e => e.startTime.startsWith('2025-08')));
-      return data;
+      return response.json();
     },
   });
 
