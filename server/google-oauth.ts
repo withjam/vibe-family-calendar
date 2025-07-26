@@ -61,6 +61,22 @@ export class GoogleOAuthService {
     });
   }
 
+  // Helper method to parse reminder strings to minutes
+  private parseReminderToMinutes(reminder: string): number {
+    if (reminder.includes('minutes before')) {
+      return parseInt(reminder.split(' ')[0]);
+    } else if (reminder.includes('hour before')) {
+      return parseInt(reminder.split(' ')[0]) * 60;
+    } else if (reminder.includes('hours before')) {
+      return parseInt(reminder.split(' ')[0]) * 60;
+    } else if (reminder.includes('day before')) {
+      return parseInt(reminder.split(' ')[0]) * 24 * 60;
+    } else if (reminder.includes('days before')) {
+      return parseInt(reminder.split(' ')[0]) * 24 * 60;
+    }
+    return 15; // Default fallback
+  }
+
   // Create event in Google Calendar
   async createEvent(calendarId: string, eventData: any) {
     const calendar = google.calendar({ version: 'v3', auth: this.oauth2Client });
@@ -145,7 +161,7 @@ export class GoogleOAuthService {
       };
     }
 
-    console.log('Updating Google Calendar event:', cleanEventId);
+
 
     const response = await calendar.events.update({
       calendarId: calendarId,
@@ -163,7 +179,7 @@ export class GoogleOAuthService {
     // Clean the event ID - remove @google.com if present
     const cleanEventId = eventId.replace('@google.com', '');
     
-    console.log('Deleting Google Calendar event:', cleanEventId);
+
     
     await calendar.events.delete({
       calendarId: calendarId,

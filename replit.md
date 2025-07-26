@@ -104,6 +104,26 @@ Preferred communication style: Simple, everyday language.
 - ✅ Calendar day click shortcut: clicking empty calendar cells opens Add Event dialog with pre-selected date
 - ✅ Current day highlighting: today's date is highlighted with blue background and rounded day number
 
+### PostgreSQL Database & Persistent Storage (January 26, 2025)
+- ✅ Replaced in-memory storage with PostgreSQL database
+- ✅ Implemented DatabaseStorage class with Drizzle ORM queries
+- ✅ Database schema includes users, events, and calendar sources tables
+- ✅ Sample events migrated to persistent storage
+- ✅ All CRUD operations now use database with proper error handling
+
+### Calendar Sync Interval Customization (January 26, 2025)
+- ✅ Added sync frequency selector to calendar import form
+- ✅ Six preset options: 15 min, 30 min, 1 hour, 2 hours, 6 hours, daily
+- ✅ Inline editor for existing calendar sync intervals
+- ✅ Human-readable frequency display and real-time editing with save/cancel
+
+### Bidirectional Sync Bug Fix (January 26, 2025)
+- ✅ Fixed Google Calendar event updates failing due to incorrect external ID format
+- ✅ Event updates now properly sync to Google Calendar for OAuth-enabled calendars
+- ✅ Event deletions also fixed to handle external ID format correctly
+- ✅ Added missing parseReminderToMinutes method for handling reminder sync
+- ✅ Complete bidirectional sync working for create, update, and delete operations
+
 ## Key Components
 
 ### Database Schema

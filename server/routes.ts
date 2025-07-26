@@ -131,15 +131,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
 
-      console.log('Updating event ID:', id, 'with changes to:', Object.keys(validatedData));
-      
       // If updating an OAuth-enabled calendar event, sync to Google Calendar
       if (originalEvent.sourceCalendar && originalEvent.externalId) {
-        console.log('Event has sourceCalendar and externalId, syncing to external calendar...');
         const calendarSource = await storage.getCalendarSourceByName(originalEvent.sourceCalendar);
         
         if (calendarSource?.hasOAuthCredentials && calendarSource.oauthRefreshToken && calendarSource.googleCalendarId) {
-          console.log('Syncing event update to Google Calendar...');
           try {
             googleOAuthService.setCredentials(calendarSource.oauthRefreshToken);
             
@@ -161,17 +157,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               updateData
             );
             
-            console.log('Google Calendar event updated successfully:', googleEvent.id);
+            console.log('Google Calendar event updated successfully');
             
           } catch (oauthError) {
             console.error('Failed to update event in Google Calendar:', oauthError);
             // Continue with local update even if Google sync fails
           }
-        } else {
-          console.log('Calendar source does not have OAuth credentials or is missing required fields');
         }
-      } else {
-        console.log('Event does not have sourceCalendar or externalId - skipping Google sync');
       }
 
       const event = await storage.updateEvent(id, validatedData);
