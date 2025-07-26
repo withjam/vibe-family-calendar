@@ -27,21 +27,31 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + 1); // Next 24 hours for active reminders
       
+      console.log(`[NotificationBanner] Fetching events from ${now.toISOString()} to ${endDate.toISOString()}`);
+      
       const response = await fetch(
         `/api/events/range?startDate=${now.toISOString()}&endDate=${endDate.toISOString()}`
       );
       if (!response.ok) throw new Error("Failed to fetch events");
-      return response.json();
+      const data = await response.json();
+      console.log(`[NotificationBanner] Query returned ${data.length} events`);
+      return data;
     },
     refetchInterval: 60000, // Reduced frequency as worker handles the frequent checking
   });
 
   // Use web worker for reminder processing
   const { triggeredReminders, clearReminders, status } = useReminderWorker(events);
+  
+  // Debug logging for events
+  useEffect(() => {
+    console.log('[NotificationBanner] Events updated:', events.length, events);
+  }, [events]);
 
   // Handle new reminders from the web worker
   useEffect(() => {
     if (triggeredReminders.length > 0) {
+      console.log('[NotificationBanner] Adding triggered reminders to active notifications:', triggeredReminders);
       setActiveNotifications(prev => [...prev, ...triggeredReminders]);
       
       // Set up progress bar and auto-dismiss for each new notification
@@ -85,6 +95,11 @@ export function NotificationBanner({ onEventSelect }: NotificationBannerProps) {
     onEventSelect(eventId);
     dismissNotification(notificationId);
   };
+
+  // Debug logging for active notifications
+  useEffect(() => {
+    console.log('[NotificationBanner] Active notifications updated:', activeNotifications.length, activeNotifications);
+  }, [activeNotifications]);
 
   if (activeNotifications.length === 0) return null;
 

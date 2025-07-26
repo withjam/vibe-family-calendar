@@ -43,6 +43,7 @@ export function useReminderWorker(events: Event[]): UseReminderWorkerReturn {
           
           switch (type) {
             case 'REMINDERS_TRIGGERED':
+              console.log('[Hook] Received triggered reminders from worker:', payload);
               setTriggeredReminders(prev => [...prev, ...payload]);
               break;
               
@@ -120,6 +121,7 @@ export function useReminderWorker(events: Event[]): UseReminderWorkerReturn {
   // Update events in worker when they change
   useEffect(() => {
     if (workerRef.current && events.length > 0) {
+      console.log('[Hook] Sending events to worker:', events.length, events);
       workerRef.current.postMessage({
         type: 'UPDATE_EVENTS',
         payload: events
