@@ -46,15 +46,50 @@ class ReminderWorker {
   updateEvents(newEvents) {
     console.log(`[Worker] Received ${newEvents.length} events for reminder processing`);
     
+    // Parse reminder strings into numeric offsets for more flexible processing
+    const eventsWithParsedReminders = newEvents.map(event => ({
+      ...event,
+      parsedReminders: this.parseReminders(event.reminders || [])
+    }));
+    
     // If this is the first time receiving events, mark all past reminders as already processed
     // to prevent notification spam on app load
     if (this.events.length === 0) {
-      this.initializePastReminders(newEvents);
+      this.initializePastReminders(eventsWithParsedReminders);
     }
     
-    this.events = newEvents;
+    this.events = eventsWithParsedReminders;
     // Reset retry count on successful data update
     this.retryCount = 0;
+  }
+
+  parseReminders(reminders) {
+    return reminders.map(reminderText => {
+      let offsetMinutes = 0;
+      
+      // Parse reminder text to extract numeric offset in minutes
+      // Check most specific patterns first to avoid conflicts
+      if (reminderText.includes("15 minutes")) {
+        offsetMinutes = 15;
+      } else if (reminderText.includes("30 minutes")) {
+        offsetMinutes = 30;
+      } else if (reminderText.includes("5 minutes")) {
+        offsetMinutes = 5;
+      } else if (reminderText.includes("2 minutes")) {
+        offsetMinutes = 2;
+      } else if (reminderText.includes("1 minute")) {
+        offsetMinutes = 1;
+      } else if (reminderText.includes("1 hour")) {
+        offsetMinutes = 60;
+      } else if (reminderText.includes("1 day")) {
+        offsetMinutes = 1440; // 24 * 60
+      }
+      
+      return {
+        text: reminderText,
+        offsetMinutes: offsetMinutes
+      };
+    }).filter(reminder => reminder.offsetMinutes > 0); // Filter out unparseable reminders
   }
 
   initializePastReminders(events) {
@@ -62,38 +97,18 @@ class ReminderWorker {
     console.log(`[Worker] Initializing past reminders to prevent notification spam`);
     
     events.forEach((event) => {
-      if (!event.reminders || event.reminders.length === 0) return;
+      if (!event.parsedReminders || event.parsedReminders.length === 0) return;
 
       const eventStart = new Date(event.startTime);
       
-      event.reminders.forEach((reminderText) => {
-        let reminderTime = null;
-
-        // Parse reminder text to calculate time - check most specific patterns first
-        if (reminderText.includes("15 minutes")) {
-          reminderTime = this.addMinutes(eventStart, -15);
-        } else if (reminderText.includes("30 minutes")) {
-          reminderTime = this.addMinutes(eventStart, -30);
-        } else if (reminderText.includes("5 minutes")) {
-          reminderTime = this.addMinutes(eventStart, -5);
-        } else if (reminderText.includes("2 minutes")) {
-          reminderTime = this.addMinutes(eventStart, -2);
-        } else if (reminderText.includes("1 minute")) {
-          reminderTime = this.addMinutes(eventStart, -1);
-        } else if (reminderText.includes("1 hour")) {
-          reminderTime = this.addHours(eventStart, -1);
-        } else if (reminderText.includes("1 day")) {
-          reminderTime = this.addDays(eventStart, -1);
-        }
-
-        if (reminderTime) {
-          const reminderId = `${event.id}-${reminderText}-${reminderTime.getTime()}`;
-          
-          // If reminder time has passed by more than 2 minutes, mark it as already checked
-          const timeDiff = now.getTime() - reminderTime.getTime();
-          if (timeDiff > 120000) { // More than 2 minutes ago
-            this.checkedReminders.add(reminderId);
-          }
+      event.parsedReminders.forEach((reminder) => {
+        const reminderTime = this.addMinutes(eventStart, -reminder.offsetMinutes);
+        const reminderId = `${event.id}-${reminder.text}-${reminderTime.getTime()}`;
+        
+        // If reminder time has passed by more than 2 minutes, mark it as already checked
+        const timeDiff = now.getTime() - reminderTime.getTime();
+        if (timeDiff > 120000) { // More than 2 minutes ago
+          this.checkedReminders.add(reminderId);
         }
       });
     });
@@ -105,14 +120,6 @@ class ReminderWorker {
     return new Date(date.getTime() + minutes * 60000);
   }
 
-  addHours(date, hours) {
-    return new Date(date.getTime() + hours * 3600000);
-  }
-
-  addDays(date, days) {
-    return new Date(date.getTime() + days * 86400000);
-  }
-
   processReminders() {
     try {
       const now = new Date();
@@ -121,49 +128,29 @@ class ReminderWorker {
 
       
       this.events.forEach((event) => {
-        if (!event.reminders || event.reminders.length === 0) return;
+        if (!event.parsedReminders || event.parsedReminders.length === 0) return;
 
         const eventStart = new Date(event.startTime);
         
-        event.reminders.forEach((reminderText) => {
-          let reminderTime = null;
-
-          // Parse reminder text to calculate time - check most specific patterns first
-          if (reminderText.includes("15 minutes")) {
-            reminderTime = this.addMinutes(eventStart, -15);
-          } else if (reminderText.includes("30 minutes")) {
-            reminderTime = this.addMinutes(eventStart, -30);
-          } else if (reminderText.includes("5 minutes")) {
-            reminderTime = this.addMinutes(eventStart, -5);
-          } else if (reminderText.includes("2 minutes")) {
-            reminderTime = this.addMinutes(eventStart, -2);
-          } else if (reminderText.includes("1 minute")) {
-            reminderTime = this.addMinutes(eventStart, -1);
-          } else if (reminderText.includes("1 hour")) {
-            reminderTime = this.addHours(eventStart, -1);
-          } else if (reminderText.includes("1 day")) {
-            reminderTime = this.addDays(eventStart, -1);
-          }
-
-          if (reminderTime) {
-            const reminderId = `${event.id}-${reminderText}-${reminderTime.getTime()}`;
+        event.parsedReminders.forEach((reminder) => {
+          const reminderTime = this.addMinutes(eventStart, -reminder.offsetMinutes);
+          const reminderId = `${event.id}-${reminder.text}-${reminderTime.getTime()}`;
+          
+          // Check if reminder should trigger - only current reminders, no past ones
+          const timeDiff = now.getTime() - reminderTime.getTime();
+          const shouldTrigger = timeDiff >= 0 && timeDiff <= 120000; // Within 2 minutes only
+          
+          // Also check if this reminder hasn't been permanently dismissed and isn't already triggered
+          if (shouldTrigger && !this.checkedReminders.has(reminderId) && !this.dismissedReminders.has(reminderId)) {
+            triggeredReminders.push({
+              event,
+              reminderText: reminder.text,
+              reminderTime,
+              id: reminderId,
+            });
             
-            // Check if reminder should trigger - only current reminders, no past ones
-            const timeDiff = now.getTime() - reminderTime.getTime();
-            const shouldTrigger = timeDiff >= 0 && timeDiff <= 120000; // Within 2 minutes only
-            
-            // Also check if this reminder hasn't been permanently dismissed and isn't already triggered
-            if (shouldTrigger && !this.checkedReminders.has(reminderId) && !this.dismissedReminders.has(reminderId)) {
-              triggeredReminders.push({
-                event,
-                reminderText,
-                reminderTime,
-                id: reminderId,
-              });
-              
-              // Mark as triggered to prevent repeated notifications
-              this.checkedReminders.add(reminderId);
-            }
+            // Mark as triggered to prevent repeated notifications
+            this.checkedReminders.add(reminderId);
           }
         });
       });

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { format, isAfter, isBefore, addMinutes, addHours, addDays } from "date-fns";
+import { format, isAfter, isBefore } from "date-fns";
+import { parseReminderOffsets, calculateReminderTime } from "@/lib/reminder-utils";
 import type { Event } from "@shared/schema";
 
 interface RemindersPanelProps {
@@ -45,31 +46,16 @@ export function RemindersPanel({ isOpen, onClose, onEventSelect }: RemindersPane
 
         const eventStart = new Date(event.startTime);
         
-        event.reminders.forEach((reminderText: string) => {
-          let reminderTime: Date | null = null;
+        const parsedReminders = parseReminderOffsets(event.reminders);
+        
+        parsedReminders.forEach((reminder) => {
+          const reminderTime = calculateReminderTime(eventStart, reminder.offsetMinutes);
 
-          // Parse reminder text to calculate time - check most specific patterns first
-          if (reminderText.includes("15 minutes")) {
-            reminderTime = addMinutes(eventStart, -15);
-          } else if (reminderText.includes("30 minutes")) {
-            reminderTime = addMinutes(eventStart, -30);
-          } else if (reminderText.includes("5 minutes")) {
-            reminderTime = addMinutes(eventStart, -5);
-          } else if (reminderText.includes("2 minutes")) {
-            reminderTime = addMinutes(eventStart, -2);
-          } else if (reminderText.includes("1 minute")) {
-            reminderTime = addMinutes(eventStart, -1);
-          } else if (reminderText.includes("1 hour")) {
-            reminderTime = addHours(eventStart, -1);
-          } else if (reminderText.includes("1 day")) {
-            reminderTime = addDays(eventStart, -1);
-          }
-
-          if (reminderTime && isAfter(reminderTime, now)) {
+          if (isAfter(reminderTime, now)) {
             reminders.push({
               event,
               reminderTime,
-              reminderText,
+              reminderText: reminder.text,
               isTriggered: false,
             });
           }

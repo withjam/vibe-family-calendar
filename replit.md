@@ -140,6 +140,10 @@ Preferred communication style: Simple, everyday language.
 - ✅ Smart initialization: past reminders are automatically marked as processed
 - ✅ Preserved upcoming reminders panel accuracy and functionality
 - ✅ Enhanced worker state management for better notification control
+- ✅ Refactored reminder calculation to use numeric offsets instead of string parsing
+- ✅ Created shared utility functions for consistent reminder time calculations
+- ✅ Improved code maintainability and reduced error-prone pattern matching
+- ✅ Worker now processes pre-parsed reminder offsets for better performance
 
 ## Key Components
 
