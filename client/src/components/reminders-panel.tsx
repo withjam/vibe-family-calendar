@@ -40,6 +40,8 @@ export function RemindersPanel({ isOpen, onClose, onEventSelect }: RemindersPane
       const now = new Date();
       const reminders: ReminderEvent[] = [];
 
+      console.log(`[RemindersPanel] Processing ${events.length} events at ${now.toISOString()}`);
+      
       events.forEach((event: Event) => {
         if (!event.reminders || event.reminders.length === 0) return;
 
@@ -63,13 +65,18 @@ export function RemindersPanel({ isOpen, onClose, onEventSelect }: RemindersPane
             reminderTime = addDays(eventStart, -1);
           }
 
-          if (reminderTime && isAfter(reminderTime, now)) {
-            reminders.push({
-              event,
-              reminderTime,
-              reminderText,
-              isTriggered: false,
-            });
+          if (reminderTime) {
+            const isUpcoming = isAfter(reminderTime, now);
+            console.log(`[RemindersPanel] Event: ${event.title}, Reminder: ${reminderText}, Time: ${reminderTime.toISOString()}, Now: ${now.toISOString()}, Is upcoming: ${isUpcoming}`);
+            
+            if (isUpcoming) {
+              reminders.push({
+                event,
+                reminderTime,
+                reminderText,
+                isTriggered: false,
+              });
+            }
           }
         });
       });
@@ -77,6 +84,7 @@ export function RemindersPanel({ isOpen, onClose, onEventSelect }: RemindersPane
       // Sort by reminder time
       reminders.sort((a, b) => a.reminderTime.getTime() - b.reminderTime.getTime());
       
+      console.log(`[RemindersPanel] Found ${reminders.length} upcoming reminders`);
       setUpcomingReminders(reminders);
     };
 
