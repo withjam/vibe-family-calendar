@@ -46,9 +46,13 @@ export default function Calendar() {
         startDate: firstCalendarDay.toISOString(),
         endDate: lastCalendarDay.toISOString(),
       });
+      console.log('Calendar fetching events from:', firstCalendarDay.toISOString(), 'to:', lastCalendarDay.toISOString());
       const response = await fetch(`/api/events/range?${params}`);
       if (!response.ok) throw new Error("Failed to fetch events");
-      return response.json();
+      const data = await response.json();
+      console.log('Calendar received events:', data.length, 'events');
+      console.log('Events in August:', data.filter(e => e.startTime.startsWith('2025-08')));
+      return data;
     },
   });
 
