@@ -8,6 +8,104 @@ interface CalendarImportModalProps {
   onClose: () => void;
 }
 
+// Helper function to format sync intervals
+const formatSyncInterval = (seconds: number): string => {
+  if (seconds < 3600) {
+    const minutes = seconds / 60;
+    return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+  } else if (seconds < 86400) {
+    const hours = seconds / 3600;
+    return `${hours} hour${hours !== 1 ? 's' : ''}`;
+  } else {
+    const days = seconds / 86400;
+    return `${days} day${days !== 1 ? 's' : ''}`;
+  }
+};
+
+// Component for editing sync intervals of existing calendars
+function SyncIntervalEditor({ source }: { source: CalendarSource }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempInterval, setTempInterval] = useState(source.syncInterval);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const updateMutation = useMutation({
+    mutationFn: async (syncInterval: number) => {
+      return apiRequest("PUT", `/api/calendar-sources/${source.id}`, { syncInterval });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/calendar-sources"] });
+      setIsEditing(false);
+      toast({
+        title: "Sync frequency updated",
+        description: `${source.name} will now sync ${formatSyncInterval(tempInterval)}.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error updating sync frequency",
+        variant: "destructive",
+      });
+      setTempInterval(source.syncInterval); // Reset on error
+    },
+  });
+
+  const handleSave = () => {
+    if (tempInterval !== source.syncInterval) {
+      updateMutation.mutate(tempInterval);
+    } else {
+      setIsEditing(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setTempInterval(source.syncInterval);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center space-x-2">
+        <select
+          value={tempInterval}
+          onChange={(e) => setTempInterval(parseInt(e.target.value))}
+          className="text-xs border border-slate-300 rounded px-2 py-1"
+        >
+          <option value={900}>15 min</option>
+          <option value={1800}>30 min</option>
+          <option value={3600}>1 hour</option>
+          <option value={7200}>2 hours</option>
+          <option value={21600}>6 hours</option>
+          <option value={86400}>1 day</option>
+        </select>
+        <button
+          onClick={handleSave}
+          disabled={updateMutation.isPending}
+          className="text-green-600 hover:text-green-700 text-xs"
+        >
+          ✓
+        </button>
+        <button
+          onClick={handleCancel}
+          disabled={updateMutation.isPending}
+          className="text-red-600 hover:text-red-700 text-xs"
+        >
+          ✗
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setIsEditing(true)}
+      className="text-blue-600 hover:text-blue-700 text-xs hover:underline"
+    >
+      Edit
+    </button>
+  );
+}
+
 export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -357,6 +455,27 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Sync Frequency
+                </label>
+                <select
+                  value={formData.syncInterval}
+                  onChange={(e) => setFormData(prev => ({ ...prev, syncInterval: parseInt(e.target.value) }))}
+                  className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value={900}>Every 15 minutes</option>
+                  <option value={1800}>Every 30 minutes</option>
+                  <option value={3600}>Every hour (recommended)</option>
+                  <option value={7200}>Every 2 hours</option>
+                  <option value={21600}>Every 6 hours</option>
+                  <option value={86400}>Once daily</option>
+                </select>
+                <div className="mt-1 text-xs text-slate-500">
+                  How often to check for calendar updates. More frequent syncing uses more resources.
+                </div>
+              </div>
+
               <button
                 type="submit"
                 disabled={isPending}
@@ -473,6 +592,12 @@ export function CalendarImportModal({ onClose }: CalendarImportModalProps) {
                           : "Never synced"
                         }
                       </span>
+                    </div>
+                    <div className="flex justify-between items-center mt-2 text-xs">
+                      <span className="text-slate-500">
+                        Sync frequency: {formatSyncInterval(source.syncInterval)}
+                      </span>
+                      <SyncIntervalEditor source={source} />
                     </div>
                   </div>
                 ))}
