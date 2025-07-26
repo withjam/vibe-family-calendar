@@ -131,32 +131,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
 
+      console.log('Updating event ID:', id, 'with changes to:', Object.keys(validatedData));
+      
       // If updating an OAuth-enabled calendar event, sync to Google Calendar
       if (originalEvent.sourceCalendar && originalEvent.externalId) {
+        console.log('Event has sourceCalendar and externalId, syncing to external calendar...');
         const calendarSource = await storage.getCalendarSourceByName(originalEvent.sourceCalendar);
         
         if (calendarSource?.hasOAuthCredentials && calendarSource.oauthRefreshToken && calendarSource.googleCalendarId) {
+          console.log('Syncing event update to Google Calendar...');
           try {
             googleOAuthService.setCredentials(calendarSource.oauthRefreshToken);
             
-            await googleOAuthService.updateEvent(
+            const updateData = {
+              title: validatedData.title || originalEvent.title,
+              description: validatedData.description !== undefined ? validatedData.description : originalEvent.description,
+              location: validatedData.location !== undefined ? validatedData.location : originalEvent.location,
+              startTime: validatedData.startTime?.toISOString() || originalEvent.startTime.toISOString(),
+              endTime: validatedData.endTime?.toISOString() || originalEvent.endTime?.toISOString(),
+              isAllDay: validatedData.isAllDay !== undefined ? validatedData.isAllDay : originalEvent.isAllDay,
+              reminders: validatedData.reminders || originalEvent.reminders
+            };
+            
+
+            
+            const googleEvent = await googleOAuthService.updateEvent(
               calendarSource.googleCalendarId,
               originalEvent.externalId,
-              {
-                title: validatedData.title || originalEvent.title,
-                description: validatedData.description || originalEvent.description,
-                location: validatedData.location || originalEvent.location,
-                startTime: validatedData.startTime?.toISOString() || originalEvent.startTime.toISOString(),
-                endTime: validatedData.endTime?.toISOString() || originalEvent.endTime?.toISOString(),
-                isAllDay: validatedData.isAllDay !== undefined ? validatedData.isAllDay : originalEvent.isAllDay,
-                reminders: validatedData.reminders || originalEvent.reminders
-              }
+              updateData
             );
+            
+            console.log('Google Calendar event updated successfully:', googleEvent.id);
+            
           } catch (oauthError) {
             console.error('Failed to update event in Google Calendar:', oauthError);
             // Continue with local update even if Google sync fails
           }
+        } else {
+          console.log('Calendar source does not have OAuth credentials or is missing required fields');
         }
+      } else {
+        console.log('Event does not have sourceCalendar or externalId - skipping Google sync');
       }
 
       const event = await storage.updateEvent(id, validatedData);

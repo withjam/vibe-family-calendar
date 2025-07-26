@@ -112,10 +112,13 @@ export class GoogleOAuthService {
   async updateEvent(calendarId: string, eventId: string, eventData: any) {
     const calendar = google.calendar({ version: 'v3', auth: this.oauth2Client });
     
+    // Clean the event ID - remove @google.com if present
+    const cleanEventId = eventId.replace('@google.com', '');
+    
     const event = {
       summary: eventData.title,
-      description: eventData.description,
-      location: eventData.location,
+      description: eventData.description || '',
+      location: eventData.location || '',
       start: eventData.isAllDay 
         ? { date: eventData.startTime.split('T')[0] }
         : { dateTime: eventData.startTime, timeZone: 'America/New_York' },
@@ -128,9 +131,25 @@ export class GoogleOAuthService {
           : { dateTime: new Date(new Date(eventData.startTime).getTime() + 60 * 60 * 1000).toISOString(), timeZone: 'America/New_York' },
     };
 
+    // Add reminders if provided
+    if (eventData.reminders && eventData.reminders.length > 0) {
+      event.reminders = {
+        useDefault: false,
+        overrides: eventData.reminders.map(reminder => {
+          const minutes = this.parseReminderToMinutes(reminder);
+          return {
+            method: 'popup',
+            minutes: minutes
+          };
+        })
+      };
+    }
+
+    console.log('Updating Google Calendar event:', cleanEventId);
+
     const response = await calendar.events.update({
       calendarId: calendarId,
-      eventId: eventId,
+      eventId: cleanEventId,
       resource: event,
     });
 
@@ -141,9 +160,14 @@ export class GoogleOAuthService {
   async deleteEvent(calendarId: string, eventId: string) {
     const calendar = google.calendar({ version: 'v3', auth: this.oauth2Client });
     
+    // Clean the event ID - remove @google.com if present
+    const cleanEventId = eventId.replace('@google.com', '');
+    
+    console.log('Deleting Google Calendar event:', cleanEventId);
+    
     await calendar.events.delete({
       calendarId: calendarId,
-      eventId: eventId,
+      eventId: cleanEventId,
     });
   }
 
